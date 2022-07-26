@@ -1,7 +1,0 @@
-pkg/
-src/
-kernel/
-base.config
-surface.config
-*.pkg.tar.zst
-*.pkg.tar.xz

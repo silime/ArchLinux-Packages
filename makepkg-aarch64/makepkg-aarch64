@@ -1,6 +1,0 @@
-#!/bin/bash
-#
-# /usr/bin/aarch64-makepkg script
-#
-
-/usr/bin/makepkg --config "/etc/makepkg-aarch64.conf" "$@"

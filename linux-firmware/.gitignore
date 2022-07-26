@@ -1,6 +1,0 @@
-linux-firmware/
-aarch64-firmware/
-pkg/
-src/
-*.pkg.tar.zst
-*.pkg.tar.xz
