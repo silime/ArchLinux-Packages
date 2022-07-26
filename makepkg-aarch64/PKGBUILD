@@ -1,0 +1,21 @@
+# Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
+
+pkgname="makepkg-aarch64"
+pkgver="1.0.0"
+pkgrel="1"
+
+pkgdesc="'makepkg' command for building/cross-compiling Arch Linux AArch64 packages from a different host architectures (e.g. x86)."
+arch=("any")
+license=("MIT")
+
+source=(
+    "makepkg-aarch64"
+    "makepkg-aarch64.conf"
+)
+sha256sums=('b6fe52793c1b46f52193e7263f145b831053170184c7af13229c0cef73ec44c2'
+            'e82345ac263c36c7b13b67b87e6b22fd5759d462aa0b031fe5e3627bcd2a0032')
+
+package() {
+    install -Dm755 "${srcdir}/makepkg-aarch64" "${pkgdir}/usr/bin/makepkg-aarch64"
+    install -Dm644 "${srcdir}/makepkg-aarch64.conf" "${pkgdir}/etc/makepkg-aarch64.conf"
+}
