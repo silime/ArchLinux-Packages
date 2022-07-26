@@ -1,6 +1,8 @@
 name: Build kernel deb packages
-on: push
-
+on:
+  push:
+    tags:
+      - 'debian'
 jobs:
   build:
     name: Build kernel
