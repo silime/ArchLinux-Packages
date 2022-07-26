@@ -12,8 +12,7 @@ source=(
     "makepkg-aarch64"
     "makepkg-aarch64.conf"
 )
-sha256sums=('skip'
-            'skip')
+
 
 package() {
     install -Dm755 "${srcdir}/makepkg-aarch64" "${pkgdir}/usr/bin/makepkg-aarch64"
