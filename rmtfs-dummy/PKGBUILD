@@ -1,0 +1,67 @@
+# Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
+#
+# Based on PKGBUILDs at
+# - https://github.com/andersson/arch-packages/blob/master/rmtfs-pkg/PKGBUILD
+# - https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=rmtfs-git
+
+_pkgname="rmtfs-dummy"
+pkgname="$_pkgname-git"
+pkgdesc="Qualcomm Remote Filesystem Service Implementation with Dummy Modem Files"
+pkgver=v0.2.r37.gb08ef6f
+pkgrel=1
+arch=("aarch64")
+url="https://github.com/andersson/rmtfs"
+license=("BSD-3-Clause")
+groups=("qcom-icnss-wlan")
+depends=("qrtr" "libudev.so")
+makedepends=("git" "make" "gcc")
+provides=("rmtfs")
+conflicts=("rmtfs")
+source=(
+    "git+https://github.com/andersson/rmtfs.git"
+    "udev.rules"
+    "0001-Redirect-file-lookups-to-var-lib-rmtfs.patch"
+)
+sha256sums=('SKIP'
+            '0c2f26d40d9d18e3089c6d836b64231c4f7e0c1ca41686fe7c9d1eb495dc6bbe'
+            'e3018310920261f56e7eb57f4d41ae781157771317764710b516079bf843bf5b')
+
+pkgver() {
+    cd "rmtfs"
+
+    git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+    cd "rmtfs"
+
+    git apply "$srcdir/0001-Redirect-file-lookups-to-var-lib-rmtfs.patch"
+}
+
+build() {
+    cd "rmtfs"
+
+    # force use of pre-compiled qmi output if available
+    if [[ -f "$srcdir/rmtfs/qmi_rmtfs.c" ]]; then
+        touch "$srcdir/rmtfs/qmi_rmtfs.c"
+    fi
+
+    make prefix=/usr
+}
+
+package() {
+    cd "rmtfs"
+
+    # base install
+   	make prefix=/usr DESTDIR="$pkgdir/" install
+    install -Dm644 "$srcdir"/udev.rules "$pkgdir/usr/lib/udev/rules.d/65-$_pkgname.rules"
+    install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/$_pkgname/COPYING
+
+    # create dummy files
+    mkdir -p "$pkgdir/var/lib/rmtfs/"
+    dd if=/dev/zero of="$pkgdir/var/lib/rmtfs/modem_fs1" bs=2M count=1 2> /dev/null
+    dd if=/dev/zero of="$pkgdir/var/lib/rmtfs/modem_fs2" bs=2M count=1 2> /dev/null
+    dd if=/dev/zero of="$pkgdir/var/lib/rmtfs/modem_fsc" bs=2M count=1 2> /dev/null
+    dd if=/dev/zero of="$pkgdir/var/lib/rmtfs/modem_fsg" bs=2M count=1 2> /dev/null
+    dd if=/dev/zero of="$pkgdir/var/lib/rmtfs/modem_tuning" bs=2M count=1 2> /dev/null
+}

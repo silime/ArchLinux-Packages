@@ -1,0 +1,20 @@
+# Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
+# Based on https://aur.archlinux.org/packages/shim-signed
+
+pkgname='shim-aarch64-signed'
+pkgver='15.4+suse+4.7.1'
+pkgrel='1'
+pkgdesc="Initial UEFI bootloader that handles chaining to a trusted full bootloader under secure boot environments (prebuilt AArch64 EFI binaries from openSUSE)"
+url='https://software.opensuse.org/package/shim'
+arch=('any')
+license=('BSD')
+options=('!strip')
+source=("https://download.opensuse.org/distribution/leap/15.4/repo/oss/aarch64/shim-${pkgver//+suse+/-}.aarch64.rpm")
+sha512sums=('ac63b290542297883295c59587a8395ac8a739a5f21a6e53d21b332bdc6866a1d1842812c6756117e72710bd56b7df6d6bdd9f2582b3257cf584affc2f129bb4')
+
+package() {
+    install -D -m0644 -t "${pkgdir}/usr/share/shim-signed/aarch64" "${srcdir}/usr/share/efi/aarch64/shim-sles.efi"
+    install -D -m0644 -t "${pkgdir}/usr/share/shim-signed/aarch64" "${srcdir}/usr/share/efi/aarch64/shim-sles.der"
+    install -D -m0644 -t "${pkgdir}/usr/share/shim-signed/aarch64" "${srcdir}/usr/share/efi/aarch64/MokManager.efi"
+    install -D -m0644 -t "${pkgdir}/usr/share/shim-signed/aarch64" "${srcdir}/usr/share/efi/aarch64/fallback.efi"
+}
