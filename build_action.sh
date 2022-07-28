@@ -20,11 +20,13 @@ git clone -b sdm845/5.19-dev https://gitlab.com/sdm845-mainline/linux.git --dept
 cd linux  || exit
 
 # generate .config
-echo "CONFIG_DRM_PANEL_JDI_NT35596S=y" >> arch/arm64/configs/sdm845.config
-git add . || git commit -m "add JDI_NT35596S config"
+make ARCH=arm64 defconfig sdm845.config
+# add mix2s patch
 echo "Add mix2s.patch"
 git am ../mix2s.patch
-make ARCH=arm64 defconfig sdm845.config
+# add mix2s panel driver
+sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
+
 
 
 
@@ -35,6 +37,6 @@ make -j$(nproc) ARCH=arm64 KBUILD_DEBARCH=arm64 KDEB_CHANGELOG_DIST=mobile CROSS
 # move deb packages to artifact dir
 cd ..
 mkdir "artifact"
-mkdir artifact/dtb
-cp linux/arch/arm64/boot/dts/qcom/sdm845-*.dtb artifact/dtb/
+
+cp linux/arch/arm64/boot/dts/qcom/sdm845-*.dtb artifact/
 mv ./*.deb artifact/
