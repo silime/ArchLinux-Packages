@@ -2,34 +2,27 @@
 #
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
-pkgbase="linux-surface"
-pkgver="5.19.rc8"
+pkgbase="linux-sdm845"
+pkgver="5.19.rc1"
 pkgrel="1"
 
-_pkgdesc="Linux Surface"
+_pkgdesc="Linux SDM845"
 
 arch=("aarch64")
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 
-_ref_ksource="a4328e19f6182378b653ecdd7ceb306ca06d04db"
-_ref_config_base="3988a5dc65f97fed117e65a665adb6cfce9da29f"
-_ref_config_surface="2c1f44f055e5373dd657587d127c6228b1386ee7"
+_ref_ksource="85c025cf7a33c0bf1055019bc29aa3f5f2eb9b6f"
+
 
 source=(
-    "kernel::git+https://github.com/linux-surface/kernel.git#commit=${_ref_ksource}"
-    "base.config::https://raw.githubusercontent.com/archlinuxarm/PKGBUILDs/${_ref_config_base}/core/linux-aarch64/config"
-    "surface.config::https://raw.githubusercontent.com/qzed/aarch64-kernel-configs/${_ref_config_surface}/fragments/spx.config"
-    "overrides.config"
-    "linux-surface.preset"
-    "linux-surface.preset"
+    "kernel::git+https://gitlab.com/sdm845-mainline/linux.git#commit=${_ref_ksource}"
+    "linux-sdm845.preset"
+    "linux-sdm845.preset"
 )
 sha256sums=('SKIP'
-            '697ba2890990b247af79ec026f5f666cf6a866319b1b836f9b7bf4939a22a519'
-            'aeb9ea0afe1e38a72fc798be1512a22f3601b0265c9f5b953b67cb867671e4b5'
-            'f8041d666e2775b2e36d243708b0fae574914a0ce2a4e260c19127932f3d072e'
-            'dee0315958e71d628af287e85eea6c2ec1e73f9f7cc78763168fbc627629e262'
-            'dee0315958e71d628af287e85eea6c2ec1e73f9f7cc78763168fbc627629e262')
+            '893841A69291A2B8433F738F537EAA7CDD2FD6F60C490D6BBD4BBDC5AB41AA0D'
+            '893841A69291A2B8433F738F537EAA7CDD2FD6F60C490D6BBD4BBDC5AB41AA0D')
 
 prepare() {
     cd "${srcdir}/kernel"
@@ -42,8 +35,8 @@ prepare() {
     echo "${pkgbase#linux}" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    ./scripts/kconfig/merge_config.sh -m "${srcdir}/base.config" "${srcdir}/surface.config" "${srcdir}/overrides.config"
-    make olddefconfig
+    # ./scripts/kconfig/merge_config.sh -m "${srcdir}/base.config" "${srcdir}/surface.config" "${srcdir}/overrides.config"
+    make ARCH=arm64 defconfig sdm845.config
 }
 
 build() {
