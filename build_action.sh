@@ -17,10 +17,12 @@ cd "${GITHUB_WORKSPACE}" || exit
 
 # download kernel source and patch
 git clone -b sdm845/5.19-dev https://gitlab.com/sdm845-mainline/linux.git --depth=1
-cd linux || git am ../mix2s.patch || exit
+cd linux  || exit
 
 # generate .config
 echo "CONFIG_DRM_PANEL_JDI_NT35596S=y" >> arch/arm64/configs/sdm845.config
+echo "Add mix2s.patch"
+git am ../mix2s.patch
 make ARCH=arm64 defconfig sdm845.config
 
 
