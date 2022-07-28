@@ -2,7 +2,7 @@ name: Build kernel deb packages
 on:
   push:
     tags:
-      - 'debian'
+      - 'debian*'
 jobs:
   build:
     name: Build kernel
@@ -19,3 +19,22 @@ jobs:
         with:
           name: artifact
           path: ${{ github.workspace }}/artifact/
+  release:
+    name: Publish release
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: linux-sdm845-aarch64-latest
+
+    - name: Upload assets
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.BUILD_TOKEN }}
+        file: ./*sdm845-/*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true

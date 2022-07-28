@@ -32,5 +32,5 @@ make -j$(nproc) ARCH=arm64 KBUILD_DEBARCH=arm64 KDEB_CHANGELOG_DIST=mobile CROSS
 cd ..
 mkdir "artifact"
 mkdir artifact/dtb
-cp linux/arch/arm64/boot/dts/qcom/*.dtb artifact/dtb/
+cp linux/arch/arm64/boot/dts/qcom/sdm845-*.dtb artifact/dtb/
 mv ./*.deb artifact/

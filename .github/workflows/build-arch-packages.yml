@@ -69,7 +69,7 @@ jobs:
     - name: Upload assets
       uses: svenstaro/upload-release-action@v1-release
       with:
-        repo_token: ${{ secrets.LINUX_SURFACE_BOT_TOKEN }}
+        repo_token: ${{ secrets.BUILD_TOKEN }}
         file: ./*-latest/*
         tag: ${{ github.ref }}
         overwrite: true
