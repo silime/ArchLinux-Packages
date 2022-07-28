@@ -21,6 +21,7 @@ cd linux  || exit
 
 # generate .config
 echo "CONFIG_DRM_PANEL_JDI_NT35596S=y" >> arch/arm64/configs/sdm845.config
+git add . || git commit -m "add JDI_NT35596S config"
 echo "Add mix2s.patch"
 git am ../mix2s.patch
 make ARCH=arm64 defconfig sdm845.config
