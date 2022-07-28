@@ -36,6 +36,8 @@ jobs:
     - name: Build Package
       run: |
         cd linux-surface
+        git config --global user.email "chalkinbot@users.noreply.github.com"
+        git config --global user.name "chalkinbot"
         # Fix permissions (can't makepkg as root)
         chown -R nobody .
         # Package compression settings (Matches latest Arch)
