@@ -17,7 +17,7 @@ jobs:
       - name: Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: artifact
+          name: linux-sdm845-aarch64-latest
           path: ${{ github.workspace }}/artifact/
   release:
     name: Publish release
