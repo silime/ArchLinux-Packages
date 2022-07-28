@@ -15,11 +15,12 @@ sudo apt build-dep -y linux
 # change dir to workplace
 cd "${GITHUB_WORKSPACE}" || exit
 
-# download kernel source
+# download kernel source and patch
 git clone -b sdm845/5.19-dev https://gitlab.com/sdm845-mainline/linux.git --depth=1
-cd linux || exit
+cd linux || git am ../mix2s.patch || exit
 
 # generate .config
+echo "CONFIG_DRM_PANEL_JDI_NT35596S=y" >> arch/arm64/configs/sdm845.config
 make ARCH=arm64 defconfig sdm845.config
 
 
