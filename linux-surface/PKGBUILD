@@ -37,9 +37,9 @@ prepare() {
     msg2 "Configuring..."
     # ./scripts/kconfig/merge_config.sh -m "${srcdir}/base.config" "${srcdir}/surface.config" "${srcdir}/overrides.config"
     # add mix2s patch
-    echo "Add mix2s.patch"
-    pwd
-    git am ../../../mix2s.patch
+    # echo "Add mix2s.patch"
+    # pwd
+    # git am ../../../mix2s.patch
     make ARCH=arm64 defconfig sdm845.config
     # add mix2s panel driver
     sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
