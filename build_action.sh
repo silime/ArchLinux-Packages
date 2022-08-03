@@ -25,7 +25,7 @@ make ARCH=arm64 defconfig sdm845.config
 # echo "Add mix2s.patch"
 # git am ../mix2s.patch
 # add mix2s panel driver
-sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
+# sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
 
 
 
