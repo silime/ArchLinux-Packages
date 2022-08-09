@@ -21,9 +21,9 @@ cd linux  || exit
 
 # generate .config
 make ARCH=arm64 defconfig sdm845.config
-# add mix2s patch
-# echo "Add mix2s.patch"
-# git am ../mix2s.patch
+# add some patch
+echo "Add MI8-dipper.patch"
+git am ../MI8-dipper.patch
 # add mix2s panel driver
 # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
 
