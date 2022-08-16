@@ -19,8 +19,6 @@ cd "${GITHUB_WORKSPACE}" || exit
 git clone -b sdm845/5.19-release https://gitlab.com/sdm845-mainline/linux.git --depth=1
 cd linux  || exit
 
-# generate .config
-make ARCH=arm64 defconfig sdm845.config
 # add some patch
 echo "Add MI8-dipper.patch"
 git am ../MI8-dipper.patch
@@ -31,6 +29,8 @@ git am ../41.patch
 
 
 
+# generate .config
+make ARCH=arm64 defconfig sdm845.config
 
 # build deb packages
 make -j$(nproc) ARCH=arm64 KBUILD_DEBARCH=arm64 KDEB_CHANGELOG_DIST=mobile CROSS_COMPILE=aarch64-linux-gnu- deb-pkg
