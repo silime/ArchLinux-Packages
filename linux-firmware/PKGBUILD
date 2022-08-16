@@ -48,7 +48,7 @@ prepare() {
 
   msg2 "Adding/patching firmware for sdm845 devices"
   cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/postmarketos/." .
-  cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/." .
+  cp -a "./tfa98xx.cnt" .
   # update WHENCE
   echo "" >> WHENCE
   echo "---------------------------------------------------------------------------" >> WHENCE
