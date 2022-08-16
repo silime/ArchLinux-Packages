@@ -13,7 +13,7 @@
 #   env SPX_FIRMWARE_ROOT="../path/to/firmware/" makepkg
 
 _pkgbase=linux-firmware
-pkgbase=${_pkgbase}-msft-surface-pro-x
+pkgbase=${_pkgbase}-oneplus-sdm845
 pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom)
 _tag=20220509
 pkgver=20220509.b19cbdc
@@ -26,13 +26,11 @@ makedepends=('git')
 options=(!strip)
 
 source=(
-  "git+https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git#tag=${_tag}?signed"
-  "git+https://github.com/linux-surface/aarch64-firmware.git"
+  "git+https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git#tag=${_tag}"
+  "git+https://gitlab.com/sdm845-mainline/firmware-oneplus-sdm845.git"
 )
 sha256sums=('SKIP'
             'SKIP')
-
-validpgpkeys=('4CDE8575E547BF835FE15807A31B6BD72486CFD6') # Josh Boyer <jwboyer@fedoraproject.org>
 
 _backports=(
 )
@@ -48,14 +46,14 @@ prepare() {
     git cherry-pick -n "${_c}"
   done
 
-  msg2 "Adding/patching firmware for Surface Pro X"
-  cp -a "${srcdir}/aarch64-firmware/firmware/." .
-
+  msg2 "Adding/patching firmware for sdm845 devices"
+  cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/postmarketos/." .
+  cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/." .
   # update WHENCE
   echo "" >> WHENCE
   echo "---------------------------------------------------------------------------" >> WHENCE
   echo "" >> WHENCE
-  echo "Driver: Surface Pro X firmware" >> WHENCE
+  echo "Driver: sdm845 devices firmware" >> WHENCE
   echo "" >> WHENCE
   for file in $(git ls-files --others --exclude-standard); do
     # ignore already compressed files
@@ -95,7 +93,7 @@ _pick() {
   done
 }
 
-package_linux-firmware-msft-surface-pro-x-whence() {
+package_linux-firmware-oneplus-sdm845-whence() {
   pkgdesc+=" - contains the WHENCE license file which documents the vendor license details"
   provides=('linux-firmware-whence')
   conflicts=('linux-firmware-whence')
@@ -103,8 +101,8 @@ package_linux-firmware-msft-surface-pro-x-whence() {
   install -Dt "${pkgdir}/usr/share/licenses/${pkgname}" -m644 ${_pkgbase}/WHENCE
 }
 
-package_linux-firmware-msft-surface-pro-x() {
-  depends=('linux-firmware-msft-surface-pro-x-whence')
+package_linux-firmware-oneplus-sdm845() {
+  depends=('linux-firmware-oneplus-sdm845-whence')
   provides=('linux-firmware')
   conflicts=('linux-firmware')
 
@@ -141,9 +139,9 @@ package_linux-firmware-msft-surface-pro-x() {
   _pick linux-firmware-bnx2x usr/lib/firmware/bnx2x*
 }
 
-package_linux-firmware-msft-surface-pro-x-qcom() {
+package_linux-firmware-oneplus-sdm845-qcom() {
   pkgdesc+=" - qcom / Firmware for Qualcomm SoCs"
-  depends=('linux-firmware-msft-surface-pro-x-whence')
+  depends=('linux-firmware-oneplus-sdm845-whence')
   provides=('linux-firmware-qcom')
   conflicts=('linux-firmware-qcom')
 
