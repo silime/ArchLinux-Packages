@@ -1,0 +1,722 @@
+From 95ce85862df4afb263e38d28cc457e39a01e786f Mon Sep 17 00:00:00 2001
+From: Caleb Connolly <caleb@connolly.tech>
+Date: Sat, 13 Aug 2022 16:52:54 +0100
+Subject: [PATCH] power: supply: pmi8998_charger: drop in v5, fix slow charging
+
+Update to the latest version of the charger from my upstreaming efforts.
+Includes the typo fix to now properly configure the fast charge current
+and finally fix the slow charging issue on the OnePlus 6. I reduced the
+fast charge current to 1A but nonetheless your device may get HOT while
+charging, do NOT leave it charging unsupervised, this charger is
+experimental.
+---
+ drivers/power/supply/qcom_pmi8998_charger.c | 293 +++++++++-----------
+ 1 file changed, 129 insertions(+), 164 deletions(-)
+
+diff --git a/drivers/power/supply/qcom_pmi8998_charger.c b/drivers/power/supply/qcom_pmi8998_charger.c
+index 4bbaeabb30c5..e57b960fc065 100644
+--- a/drivers/power/supply/qcom_pmi8998_charger.c
++++ b/drivers/power/supply/qcom_pmi8998_charger.c
+@@ -24,6 +24,7 @@
+ #include <linux/types.h>
+ #include <linux/workqueue.h>
+ 
++// clang-format off
+ #define BATTERY_CHARGER_STATUS_1			0x06
+ #define BVR_INITIAL_RAMP_BIT				BIT(7)
+ #define CC_SOFT_TERMINATE_BIT				BIT(6)
+@@ -69,10 +70,10 @@
+ #define EN_ANALOG_DROP_IN_VBATT_BIT			BIT(1)
+ #define CHARGER_INHIBIT_BIT				BIT(0)
+ 
+-#define PRE_CHARGE_CURRENT_CFG			0x60
++#define PRE_CHARGE_CURRENT_CFG				0x60
+ #define PRE_CHARGE_CURRENT_SETTING_MASK			GENMASK(5, 0)
+ 
+-#define FAST_CHARGE_CURRENT_CFG			0x61
++#define FAST_CHARGE_CURRENT_CFG				0x61
+ #define FAST_CHARGE_CURRENT_SETTING_MASK		GENMASK(7, 0)
+ 
+ #define FLOAT_VOLTAGE_CFG				0x70
+@@ -84,7 +85,7 @@
+ #define VBT_LT_CHG_RECHARGE_THRESH_SEL_BIT		BIT(1)
+ #define IBT_LT_CHG_TERM_THRESH_SEL_BIT			BIT(0)
+ 
+-#define JEITA_EN_CFG				0x90
++#define JEITA_EN_CFG					0x90
+ #define JEITA_EN_HARDLIMIT_BIT				BIT(4)
+ #define JEITA_EN_HOT_SL_FCV_BIT				BIT(3)
+ #define JEITA_EN_COLD_SL_FCV_BIT			BIT(2)
+@@ -101,7 +102,7 @@
+ #define USBIN_LT_3P6V_RT_STS_BIT			BIT(1)
+ #define USBIN_COLLAPSE_RT_STS_BIT			BIT(0)
+ 
+-#define OTG_CFG					0x153
++#define OTG_CFG						0x153
+ #define OTG_RESERVED_MASK				GENMASK(7, 6)
+ #define DIS_OTG_ON_TLIM_BIT				BIT(5)
+ #define QUICKSTART_OTG_FASTROLESWAP_BIT			BIT(4)
+@@ -110,7 +111,7 @@
+ #define OTG_EN_SRC_CFG_BIT				BIT(1)
+ #define CONCURRENT_MODE_CFG_BIT				BIT(0)
+ 
+-#define OTG_ENG_OTG_CFG				0x1C0
++#define OTG_ENG_OTG_CFG					0x1C0
+ #define ENG_BUCKBOOST_HALT1_8_MODE_BIT			BIT(0)
+ 
+ #define APSD_STATUS					0x307
+@@ -134,7 +135,7 @@
+ #define OCP_CHARGER_BIT					BIT(1)
+ #define SDP_CHARGER_BIT					BIT(0)
+ 
+-#define TYPE_C_STATUS_1				0x30B
++#define TYPE_C_STATUS_1					0x30B
+ #define UFP_TYPEC_MASK					GENMASK(7, 5)
+ #define UFP_TYPEC_RDSTD_BIT				BIT(7)
+ #define UFP_TYPEC_RD1P5_BIT				BIT(6)
+@@ -145,7 +146,7 @@
+ #define UFP_TYPEC_FMB_619K_BIT				BIT(1)
+ #define UFP_TYPEC_OPEN_OPEN_BIT				BIT(0)
+ 
+-#define TYPE_C_STATUS_2				0x30C
++#define TYPE_C_STATUS_2					0x30C
+ #define DFP_RA_OPEN_BIT					BIT(7)
+ #define TIMER_STAGE_BIT					BIT(6)
+ #define EXIT_UFP_MODE_BIT				BIT(5)
+@@ -156,7 +157,7 @@
+ #define DFP_RD_RD_BIT					BIT(1)
+ #define DFP_RA_RA_BIT					BIT(0)
+ 
+-#define TYPE_C_STATUS_3				0x30D
++#define TYPE_C_STATUS_3					0x30D
+ #define ENABLE_BANDGAP_BIT				BIT(7)
+ #define U_USB_GND_NOVBUS_BIT				BIT(6)
+ #define U_USB_FLOAT_NOVBUS_BIT				BIT(5)
+@@ -166,7 +167,7 @@
+ #define U_USB_FMB2_BIT					BIT(1)
+ #define U_USB_FLOAT2_BIT				BIT(0)
+ 
+-#define TYPE_C_STATUS_4				0x30E
++#define TYPE_C_STATUS_4					0x30E
+ #define UFP_DFP_MODE_STATUS_BIT				BIT(7)
+ #define TYPEC_VBUS_STATUS_BIT				BIT(6)
+ #define TYPEC_VBUS_ERROR_STATUS_BIT			BIT(5)
+@@ -176,7 +177,7 @@
+ #define CC_ORIENTATION_BIT				BIT(1)
+ #define CC_ATTACHED_BIT					BIT(0)
+ 
+-#define TYPE_C_STATUS_5				0x30F
++#define TYPE_C_STATUS_5					0x30F
+ #define TRY_SOURCE_FAILED_BIT				BIT(6)
+ #define TRY_SINK_FAILED_BIT				BIT(5)
+ #define TIMER_STAGE_2_BIT				BIT(4)
+@@ -199,7 +200,7 @@
+ #define VCONN_OC_CFG_BIT				BIT(1)
+ #define TYPE_C_OR_U_USB_BIT				BIT(0)
+ 
+-#define TYPE_C_CFG_2				0x359
++#define TYPE_C_CFG_2					0x359
+ #define TYPE_C_DFP_CURRSRC_MODE_BIT			BIT(7)
+ #define DFP_CC_1P4V_OR_1P6V_BIT				BIT(6)
+ #define VCONN_SOFTSTART_CFG_MASK			GENMASK(5, 4)
+@@ -208,7 +209,7 @@
+ #define TYPE_C_UFP_MODE_BIT				BIT(1)
+ #define EN_80UA_180UA_CUR_SOURCE_BIT			BIT(0)
+ 
+-#define TYPE_C_CFG_3				0x35A
++#define TYPE_C_CFG_3					0x35A
+ #define TVBUS_DEBOUNCE_BIT				BIT(7)
+ #define TYPEC_LEGACY_CABLE_INT_EN_BIT			BIT(6)
+ #define TYPEC_NONCOMPLIANT_LEGACY_CABLE_INT_EN_B	BIT(5)
+@@ -244,7 +245,7 @@
+ #define TYPEC_DRP_DFP_TIME_CFG_BIT			BIT(5)
+ #define TAPER_TIMER_SEL_MASK				GENMASK(1, 0)
+ 
+-#define USBIN_LOAD_CFG				0x365
++#define USBIN_LOAD_CFG					0x365
+ #define USBIN_OV_CH_LOAD_OPTION_BIT			BIT(7)
+ #define ICL_OVERRIDE_AFTER_APSD_BIT			BIT(4)
+ 
+@@ -253,7 +254,7 @@
+ #define USB51_MODE_BIT					BIT(1)
+ #define USBIN_MODE_CHG_BIT				BIT(0)
+ 
+-#define TYPE_C_INTRPT_ENB_SOFTWARE_CTRL		0x368
++#define TYPE_C_INTRPT_ENB_SOFTWARE_CTRL			0x368
+ #define EXIT_SNK_BASED_ON_CC_BIT			BIT(7)
+ #define VCONN_EN_ORIENTATION_BIT			BIT(6)
+ #define TYPEC_VCONN_OVERCURR_INT_EN_BIT			BIT(5)
+@@ -264,10 +265,10 @@
+ #define DFP_EN_CMD_BIT					BIT(1)
+ #define TYPEC_DISABLE_CMD_BIT				BIT(0)
+ 
+-#define USBIN_CURRENT_LIMIT_CFG			0x370
++#define USBIN_CURRENT_LIMIT_CFG				0x370
+ #define USBIN_CURRENT_LIMIT_MASK			GENMASK(7, 0)
+ 
+-#define USBIN_AICL_OPTIONS_CFG			0x380
++#define USBIN_AICL_OPTIONS_CFG				0x380
+ #define SUSPEND_ON_COLLAPSE_USBIN_BIT			BIT(7)
+ #define USBIN_AICL_HDC_EN_BIT				BIT(6)
+ #define USBIN_AICL_START_AT_MAX_BIT			BIT(5)
+@@ -280,17 +281,17 @@
+ #define USBIN_5V_AICL_THRESHOLD_CFG			0x381
+ #define USBIN_5V_AICL_THRESHOLD_CFG_MASK		GENMASK(2, 0)
+ 
+-#define USBIN_CONT_AICL_THRESHOLD_CFG		0x384
++#define USBIN_CONT_AICL_THRESHOLD_CFG			0x384
+ #define USBIN_CONT_AICL_THRESHOLD_CFG_MASK		GENMASK(5, 0)
+ 
+ #define DC_ENG_SSUPPLY_CFG2				0x4C1
+ #define ENG_SSUPPLY_IVREF_OTG_SS_MASK			GENMASK(2, 0)
+ #define OTG_SS_SLOW					0x3
+ 
+-#define DCIN_AICL_REF_SEL_CFG			0x481
++#define DCIN_AICL_REF_SEL_CFG				0x481
+ #define DCIN_CONT_AICL_THRESHOLD_CFG_MASK		GENMASK(5, 0)
+ 
+-#define WI_PWR_OPTIONS				0x495
++#define WI_PWR_OPTIONS					0x495
+ #define CHG_OK_BIT					BIT(7)
+ #define WIPWR_UVLO_IRQ_OPT_BIT				BIT(6)
+ #define BUCK_HOLDOFF_ENABLE_BIT				BIT(5)
+@@ -315,7 +316,7 @@
+ #define BARK_BITE_WDOG_PET				0x643
+ #define BARK_BITE_WDOG_PET_BIT				BIT(0)
+ 
+-#define WD_CFG					0x651
++#define WD_CFG						0x651
+ #define WATCHDOG_TRIGGER_AFP_EN_BIT			BIT(7)
+ #define BARK_WDOG_INT_EN_BIT				BIT(6)
+ #define BITE_WDOG_INT_EN_BIT				BIT(5)
+@@ -324,7 +325,7 @@
+ #define WDOG_TIMER_EN_ON_PLUGIN_BIT			BIT(1)
+ #define WDOG_TIMER_EN_BIT				BIT(0)
+ 
+-#define SNARL_BARK_BITE_WD_CFG			0x653
++#define SNARL_BARK_BITE_WD_CFG				0x653
+ #define BITE_WDOG_DISABLE_CHARGING_CFG_BIT		BIT(7)
+ #define SNARL_WDOG_TIMEOUT_MASK				GENMASK(6, 4)
+ #define BARK_WDOG_TIMEOUT_MASK				GENMASK(3, 2)
+@@ -350,6 +351,8 @@
+ #define SDP_CURRENT_UA					500000
+ #define CDP_CURRENT_UA					1500000
+ #define DCP_CURRENT_UA					1500000
++#define CURRENT_MAX_UA DCP_CURRENT_UA
++// clang-format on
+ 
+ enum charger_status {
+ 	TRICKLE_CHARGE = 0,
+@@ -379,6 +382,8 @@ struct smb2_register {
+  * @usb_in_i_chan:	USB_IN current measurement channel
+  * @usb_in_v_chan:	USB_IN voltage measurement channel
+  * @chg_psy:		Charger power supply instance
++ * @default_curr_limit:	The default current limit from the APSD, used
++ *			for CHARGE_CONTROL_LIMIT_MAX
+  */
+ struct smb2_chip {
+ 	struct device *dev;
+@@ -393,6 +398,7 @@ struct smb2_chip {
+ 	struct iio_channel *usb_in_v_chan;
+ 
+ 	struct power_supply *chg_psy;
++	long default_curr_limit;
+ };
+ 
+ static enum power_supply_property smb2_properties[] = {
+@@ -405,6 +411,8 @@ static enum power_supply_property smb2_properties[] = {
+ 	POWER_SUPPLY_PROP_HEALTH,
+ 	POWER_SUPPLY_PROP_ONLINE,
+ 	POWER_SUPPLY_PROP_USB_TYPE,
++	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT,
++	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX,
+ };
+ 
+ static enum power_supply_usb_type smb2_usb_types[] = {
+@@ -414,13 +422,12 @@ static enum power_supply_usb_type smb2_usb_types[] = {
+ 	POWER_SUPPLY_USB_TYPE_CDP,
+ };
+ 
+-int smb2_get_prop_usb_online(struct smb2_chip *chip, int *val)
++static int smb2_get_prop_usb_online(struct smb2_chip *chip, int *val)
+ {
+ 	unsigned int stat;
+ 	int rc;
+ 
+-	rc = regmap_read(chip->regmap, chip->base + POWER_PATH_STATUS,
+-			 &stat);
++	rc = regmap_read(chip->regmap, chip->base + POWER_PATH_STATUS, &stat);
+ 	if (rc < 0) {
+ 		dev_err(chip->dev, "Couldn't read POWER_PATH_STATUS! ret=%d\n",
+ 			rc);
+@@ -476,7 +483,7 @@ static int smb2_apsd_get_charger_type(struct smb2_chip *chip, int *val)
+ 	return 0;
+ }
+ 
+-int smb2_get_prop_status(struct smb2_chip *chip, int *val)
++static int smb2_get_prop_status(struct smb2_chip *chip, int *val)
+ {
+ 	int usb_online_val;
+ 	unsigned char stat[2];
+@@ -495,7 +502,7 @@ int smb2_get_prop_status(struct smb2_chip *chip, int *val)
+ 	}
+ 
+ 	rc = regmap_bulk_read(chip->regmap,
+-			 chip->base + BATTERY_CHARGER_STATUS_1, &stat, 2);
++			      chip->base + BATTERY_CHARGER_STATUS_1, &stat, 2);
+ 	if (rc < 0) {
+ 		dev_err(chip->dev, "Failed to read charging status ret=%d\n",
+ 			rc);
+@@ -542,8 +549,7 @@ static inline int smb2_get_current_limit(struct smb2_chip *chip,
+ 
+ static int smb2_set_current_limit(struct smb2_chip *chip, unsigned int val)
+ {
+-	unsigned char val_raw, icl_option;
+-	int rc;
++	unsigned char val_raw;
+ 
+ 	if (val > 4800000) {
+ 		dev_err(chip->dev,
+@@ -552,27 +558,11 @@ static int smb2_set_current_limit(struct smb2_chip *chip, unsigned int val)
+ 	}
+ 	val_raw = val / 25000;
+ 
+-	if (val == USBIN_CURRENT_100MA)
+-		icl_option = 0;
+-	else if (val == USBIN_CURRENT_150MA)
+-		icl_option = CFG_USB3P0_SEL_BIT;
+-	else if (val == USBIN_CURRENT_500MA)
+-		icl_option = USB51_MODE_BIT;
+-	else if (val == USBIN_CURRENT_900MA)
+-		icl_option = CFG_USB3P0_SEL_BIT | USB51_MODE_BIT;
+-	else if (val > USBIN_CURRENT_500MA)
+-		icl_option = USBIN_MODE_CHG_BIT;
+-
+-	rc = regmap_update_bits(chip->regmap, chip->base + USBIN_ICL_OPTIONS,
+-		CFG_USB3P0_SEL_BIT | USB51_MODE_BIT | USBIN_MODE_CHG_BIT,
+-		icl_option);
+-	if (rc < 0)
+-		return rc;
+-
+-	return regmap_write(chip->regmap, chip->base + USBIN_CURRENT_LIMIT_CFG, val_raw);
++	return regmap_write(chip->regmap, chip->base + USBIN_CURRENT_LIMIT_CFG,
++			    val_raw);
+ }
+ 
+-void smb2_status_change_work(struct work_struct *work)
++static void smb2_status_change_work(struct work_struct *work)
+ {
+ 	struct smb2_chip *chip =
+ 		container_of(work, struct smb2_chip, status_change_work.work);
+@@ -580,8 +570,10 @@ void smb2_status_change_work(struct work_struct *work)
+ 	int usb_online, count, rc;
+ 
+ 	smb2_get_prop_usb_online(chip, &usb_online);
+-	if (usb_online == 0)
++	if (usb_online == 0) {
++		chip->default_curr_limit = 0;
+ 		return;
++	}
+ 
+ 	for (count = 0; count < 3; count++) {
+ 		dev_dbg(chip->dev, "get charger type retry %d\n", count);
+@@ -613,11 +605,13 @@ void smb2_status_change_work(struct work_struct *work)
+ 		break;
+ 	}
+ 
++	chip->default_curr_limit = current_ua;
++
+ 	smb2_set_current_limit(chip, current_ua);
+ 	power_supply_changed(chip->chg_psy);
+ }
+ 
+-int smb2_get_iio_chan(struct smb2_chip *chip, struct iio_channel *chan,
++static int smb2_get_iio_chan(struct smb2_chip *chip, struct iio_channel *chan,
+ 		      int *val)
+ {
+ 	int rc;
+@@ -638,15 +632,13 @@ int smb2_get_iio_chan(struct smb2_chip *chip, struct iio_channel *chan,
+ 	return iio_read_channel_processed(chan, val);
+ }
+ 
+-int smb2_get_prop_health(struct smb2_chip *chip, int *val)
++static int smb2_get_prop_health(struct smb2_chip *chip, int *val)
+ {
+ 	int rc;
+ 	unsigned int stat;
+ 
+-	*val = POWER_SUPPLY_HEALTH_UNKNOWN;
+-
+-	rc = regmap_read(chip->regmap,
+-			 chip->base + BATTERY_CHARGER_STATUS_2, &stat);
++	rc = regmap_read(chip->regmap, chip->base + BATTERY_CHARGER_STATUS_2,
++			 &stat);
+ 	if (rc < 0) {
+ 		dev_err(chip->dev, "Couldn't read charger status rc=%d\n", rc);
+ 		return rc;
+@@ -688,13 +680,17 @@ static int smb2_get_property(struct power_supply *psy,
+ 		val->strval = chip->name;
+ 		return 0;
+ 	case POWER_SUPPLY_PROP_CURRENT_MAX:
++	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
+ 		return smb2_get_current_limit(chip, &val->intval);
++	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX:
++		val->intval = chip->default_curr_limit;
++		return 0;
+ 	case POWER_SUPPLY_PROP_CURRENT_NOW:
+ 		return smb2_get_iio_chan(chip, chip->usb_in_i_chan,
+-					  &val->intval);
++					 &val->intval);
+ 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
+ 		return smb2_get_iio_chan(chip, chip->usb_in_v_chan,
+-					  &val->intval);
++					 &val->intval);
+ 	case POWER_SUPPLY_PROP_ONLINE:
+ 		return smb2_get_prop_usb_online(chip, &val->intval);
+ 	case POWER_SUPPLY_PROP_STATUS:
+@@ -717,6 +713,7 @@ static int smb2_set_property(struct power_supply *psy,
+ 
+ 	switch (psp) {
+ 	case POWER_SUPPLY_PROP_CURRENT_MAX:
++	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
+ 		return smb2_set_current_limit(chip, val->intval);
+ 	default:
+ 		dev_err(chip->dev, "No setter for property: %d\n", psp);
+@@ -729,30 +726,32 @@ static int smb2_property_is_writable(struct power_supply *psy,
+ {
+ 	switch (psp) {
+ 	case POWER_SUPPLY_PROP_CURRENT_MAX:
++	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
+ 		return 1;
+ 	default:
+ 		return 0;
+ 	}
+ }
+ 
+-irqreturn_t smb2_handle_batt_overvoltage(int irq, void *data)
++static irqreturn_t smb2_handle_batt_overvoltage(int irq, void *data)
+ {
+ 	struct smb2_chip *chip = data;
+ 	unsigned int status;
+ 
+-	regmap_read(chip->regmap,
+-		    chip->base + BATTERY_CHARGER_STATUS_2, &status);
++	regmap_read(chip->regmap, chip->base + BATTERY_CHARGER_STATUS_2,
++		    &status);
+ 
+ 	if (status & CHARGER_ERROR_STATUS_BAT_OV_BIT) {
+ 		/* The hardware stops charging automatically */
+-		dev_err(chip->dev, "battery overvoltage detected, charging stopped\n");
++		dev_err(chip->dev,
++			"battery overvoltage detected, charging stopped\n");
+ 		power_supply_changed(chip->chg_psy);
+ 	}
+ 
+ 	return IRQ_HANDLED;
+ }
+ 
+-irqreturn_t smb2_handle_usb_plugin(int irq, void *data)
++static irqreturn_t smb2_handle_usb_plugin(int irq, void *data)
+ {
+ 	struct smb2_chip *chip = data;
+ 
+@@ -764,7 +763,7 @@ irqreturn_t smb2_handle_usb_plugin(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
+-irqreturn_t smb2_handle_usb_icl_change(int irq, void *data)
++static irqreturn_t smb2_handle_usb_icl_change(int irq, void *data)
+ {
+ 	struct smb2_chip *chip = data;
+ 
+@@ -773,14 +772,15 @@ irqreturn_t smb2_handle_usb_icl_change(int irq, void *data)
+ 	return IRQ_HANDLED;
+ }
+ 
+-irqreturn_t smb2_handle_wdog_bark(int irq, void *data)
++static irqreturn_t smb2_handle_wdog_bark(int irq, void *data)
+ {
+ 	struct smb2_chip *chip = data;
+ 	int rc;
+ 
+ 	power_supply_changed(chip->chg_psy);
+ 
+-	rc = regmap_write(chip->regmap, BARK_BITE_WDOG_PET, BARK_BITE_WDOG_PET_BIT);
++	rc = regmap_write(chip->regmap, BARK_BITE_WDOG_PET,
++			  BARK_BITE_WDOG_PET_BIT);
+ 	if (rc < 0)
+ 		dev_err(chip->dev, "Couldn't pet the dog rc=%d\n", rc);
+ 
+@@ -801,16 +801,14 @@ static const struct power_supply_desc smb2_psy_desc = {
+ 
+ /* Init sequence derived from vendor downstream driver */
+ static const struct smb2_register smb2_init_seq[] = {
+-	{ .addr = AICL_RERUN_TIME_CFG,
+-	  .mask = AICL_RERUN_TIME_MASK,
+-	  .val = 0 },
++	{ .addr = AICL_RERUN_TIME_CFG, .mask = AICL_RERUN_TIME_MASK, .val = 0 },
+ 	/*
+ 	 * By default configure us as an upstream facing port
+ 	 * FIXME: for OTG we should set UFP_EN_CMD_BIT and DFP_EN_CMD_BIT both to 0
+ 	 */
+ 	{ .addr = TYPE_C_INTRPT_ENB_SOFTWARE_CTRL,
+-	  .mask = TYPEC_POWER_ROLE_CMD_MASK | VCONN_EN_SRC_BIT
+-		| VCONN_EN_VALUE_BIT,
++	  .mask = TYPEC_POWER_ROLE_CMD_MASK | VCONN_EN_SRC_BIT |
++		  VCONN_EN_VALUE_BIT,
+ 	  .val = VCONN_EN_SRC_BIT | UFP_EN_CMD_BIT },
+ 	/*
+ 	 * disable Type-C factory mode and stay in Attached.SRC state when VCONN
+@@ -822,8 +820,8 @@ static const struct smb2_register smb2_init_seq[] = {
+ 	/* Configure VBUS for software control */
+ 	{ .addr = OTG_CFG, .mask = OTG_EN_SRC_CFG_BIT, .val = 0 },
+ 	{ .addr = FG_UPDATE_CFG_2_SEL,
+-	  .mask = SOC_LT_CHG_RECHARGE_THRESH_SEL_BIT
+-		| VBT_LT_CHG_RECHARGE_THRESH_SEL_BIT,
++	  .mask = SOC_LT_CHG_RECHARGE_THRESH_SEL_BIT |
++		  VBT_LT_CHG_RECHARGE_THRESH_SEL_BIT,
+ 	  .val = VBT_LT_CHG_RECHARGE_THRESH_SEL_BIT },
+ 	/* Enable charging */
+ 	{ .addr = USBIN_OPTIONS_1_CFG, .mask = HVDCP_EN_BIT, .val = 0 },
+@@ -831,13 +829,14 @@ static const struct smb2_register smb2_init_seq[] = {
+ 	  .mask = CHARGING_ENABLE_CMD_BIT,
+ 	  .val = CHARGING_ENABLE_CMD_BIT },
+ 	/* Allow overriding the current limit */
+-	{ .addr = USBIN_LOAD_CFG,
+-	  .mask = ICL_OVERRIDE_AFTER_APSD_BIT,
+-	  .val = ICL_OVERRIDE_AFTER_APSD_BIT },
++	// { .addr = USBIN_LOAD_CFG,
++	//   .mask = ICL_OVERRIDE_AFTER_APSD_BIT,
++	//   .val = ICL_OVERRIDE_AFTER_APSD_BIT },
+ 	{ .addr = CHGR_CFG2,
+-	  .mask = CHG_EN_SRC_BIT | CHG_EN_POLARITY_BIT | PRETOFAST_TRANSITION_CFG_BIT
+-		| BAT_OV_ECC_BIT | I_TERM_BIT | AUTO_RECHG_BIT
+-		| EN_ANALOG_DROP_IN_VBATT_BIT | CHARGER_INHIBIT_BIT,
++	  .mask = CHG_EN_SRC_BIT | CHG_EN_POLARITY_BIT |
++		  PRETOFAST_TRANSITION_CFG_BIT | BAT_OV_ECC_BIT | I_TERM_BIT |
++		  AUTO_RECHG_BIT | EN_ANALOG_DROP_IN_VBATT_BIT |
++		  CHARGER_INHIBIT_BIT,
+ 	  .val = 0 },
+ 	/*
+ 	 * No clue what this does
+@@ -854,13 +853,10 @@ static const struct smb2_register smb2_init_seq[] = {
+ 	/*
+ 	 * Disable watchdog
+ 	 */
+-	{
+-	  .addr = SNARL_BARK_BITE_WD_CFG,
+-	  .mask = 0xff,
+-	  .val = 0 },
++	{ .addr = SNARL_BARK_BITE_WD_CFG, .mask = 0xff, .val = 0 },
+ 	{ .addr = WD_CFG,
+-	  .mask = WATCHDOG_TRIGGER_AFP_EN_BIT | WDOG_TIMER_EN_ON_PLUGIN_BIT
+-		| BARK_WDOG_INT_EN_BIT,
++	  .mask = WATCHDOG_TRIGGER_AFP_EN_BIT | WDOG_TIMER_EN_ON_PLUGIN_BIT |
++		  BARK_WDOG_INT_EN_BIT,
+ 	  .val = 0 },
+ 	/* OnePlus init stuff from "op_set_collapse_fet" */
+ 	{ .addr = USBIN_5V_AICL_THRESHOLD_CFG,
+@@ -870,35 +866,33 @@ static const struct smb2_register smb2_init_seq[] = {
+ 	  .mask = USBIN_CONT_AICL_THRESHOLD_CFG_MASK,
+ 	  .val = 0x3 },
+ 	/* Yay undocumented register values! */
+-	{ .addr = USBIN_LOAD_CFG,
+-	  .mask = BIT(0) | BIT(1),
+-	  .val = 0x3 },
++	{ .addr = USBIN_LOAD_CFG, .mask = BIT(0) | BIT(1), .val = 0x3 },
+ 	/* Enable Automatic Input Current Limit, this will slowly ramp up the current
+ 	 * When connected to a wall charger, and automatically stop when it detects
+ 	 * the charger current limit (voltage drop?) or it reaches the programmed limit.
+ 	 */
+ 	{ .addr = USBIN_AICL_OPTIONS_CFG,
+-	  .mask = USBIN_AICL_START_AT_MAX_BIT | USBIN_AICL_ADC_EN_BIT | USBIN_AICL_EN_BIT
+-		| SUSPEND_ON_COLLAPSE_USBIN_BIT | USBIN_HV_COLLAPSE_RESPONSE_BIT
+-		| USBIN_LV_COLLAPSE_RESPONSE_BIT,
+-	  .val = USBIN_HV_COLLAPSE_RESPONSE_BIT | USBIN_LV_COLLAPSE_RESPONSE_BIT
+-		| USBIN_AICL_EN_BIT },
++	  .mask = USBIN_AICL_START_AT_MAX_BIT | USBIN_AICL_ADC_EN_BIT |
++		  USBIN_AICL_EN_BIT | SUSPEND_ON_COLLAPSE_USBIN_BIT |
++		  USBIN_HV_COLLAPSE_RESPONSE_BIT |
++		  USBIN_LV_COLLAPSE_RESPONSE_BIT,
++	  .val = USBIN_HV_COLLAPSE_RESPONSE_BIT |
++		 USBIN_LV_COLLAPSE_RESPONSE_BIT | USBIN_AICL_EN_BIT },
+ 	/*
+ 	 * Set pre charge current to default, the OnePlus 6 bootloader
+ 	 * sets this very conservatively.
+-	 * NOTE: seems to be reset to zero again anyway after boot
+ 	 */
+ 	{ .addr = PRE_CHARGE_CURRENT_CFG,
+ 	  .mask = PRE_CHARGE_CURRENT_SETTING_MASK,
+ 	  .val = 500000 / 25000 },
+ 	/*
+-	 * Set "fast charge current" to the default 2A, the OnePlus 6 also
+-	 * sets this very conservatively.
+-	 * NOTE: seems to be reset to zero again anyway after boot
++	 * Set "fast charge current" to the default 1A, this won't
++	 * actually limit devices with a secondary charger but it's
++	 * needed for the OnePlus 6
+ 	 */
+ 	{ .addr = FAST_CHARGE_CURRENT_CFG,
+ 	  .mask = FAST_CHARGE_CURRENT_SETTING_MASK,
+-	  .addr = 1950000 / 25000 },
++	  .val = 1000000 / 25000 },
+ };
+ 
+ static int smb2_init_hw(struct smb2_chip *chip)
+@@ -913,7 +907,8 @@ static int smb2_init_hw(struct smb2_chip *chip)
+ 					smb2_init_seq[i].mask,
+ 					smb2_init_seq[i].val);
+ 		if (rc < 0)
+-			return dev_err_probe(chip->dev, rc,
++			return dev_err_probe(
++				chip->dev, rc,
+ 				"%s: Failed to write 0x%02x to 0x%02x\n",
+ 				__func__, smb2_init_seq[i].val,
+ 				smb2_init_seq[i].addr);
+@@ -922,13 +917,23 @@ static int smb2_init_hw(struct smb2_chip *chip)
+ 	return 0;
+ }
+ 
+-#define N_IRQS 4
++struct smb2_irqs {
++	const char *name;
++	irqreturn_t (*handler)(int irq, void *data);
++};
++
++static const struct smb2_irqs irqs[] = {
++	{ .name = "bat-ov", .handler = smb2_handle_batt_overvoltage },
++	{ .name = "usb-plugin", .handler = smb2_handle_usb_plugin },
++	{ .name = "usbin-icl-change", .handler = smb2_handle_usb_icl_change },
++	{ .name = "wdog-bark", .handler = smb2_handle_wdog_bark },
++};
+ 
+ static int smb2_probe(struct platform_device *pdev)
+ {
+ 	struct power_supply_config supply_config = {};
+ 	struct smb2_chip *chip;
+-	int rc, irq[N_IRQS];
++	int rc, i, irq;
+ 
+ 	chip = devm_kzalloc(&pdev->dev, sizeof(*chip), GFP_KERNEL);
+ 	if (!chip)
+@@ -949,66 +954,16 @@ static int smb2_probe(struct platform_device *pdev)
+ 				     "Couldn't read base address\n");
+ 	}
+ 
+-	irq[0] = of_irq_get_byname(pdev->dev.of_node, "bat-ov");
+-	if (irq[0] < 0) {
+-		return dev_err_probe(chip->dev, irq[0],
+-				     "Couldn't get irq bat-ov byname\n");
+-	}
+-
+-	rc = devm_request_threaded_irq(chip->dev, irq[0], NULL,
+-				       smb2_handle_batt_overvoltage, IRQF_ONESHOT | IRQF_NO_AUTOEN,
+-				       "bat-ov", chip);
+-	if (rc < 0)
+-		return dev_err_probe(chip->dev, irq[0],
+-				     "Couldn't get irq bat-ov byname\n");
+-
+-	irq[1] = of_irq_get_byname(pdev->dev.of_node, "usb-plugin");
+-	if (irq[1] < 0)
+-		return dev_err_probe(chip->dev, irq[1],
+-				     "Couldn't get irq usb-plugin byname\n");
+-
+-	rc = devm_request_threaded_irq(chip->dev, irq[1], NULL,
+-				       smb2_handle_usb_plugin, IRQF_ONESHOT | IRQF_NO_AUTOEN,
+-				       "usb-plugin", chip);
+-	if (rc < 0)
+-		return dev_err_probe(chip->dev, irq[1],
+-			"Couldn't request irq usb-plugin\n");
+-
+-
+-	irq[2] = of_irq_get_byname(pdev->dev.of_node, "usbin-icl-change");
+-	if (irq[2] < 0) {
+-		return dev_err_probe(chip->dev, irq[2],
+-				     "Couldn't get irq usbin-icl-change byname\n");
+-	}
+-
+-	rc = devm_request_threaded_irq(chip->dev, irq[2], NULL,
+-				       smb2_handle_usb_icl_change, IRQF_ONESHOT | IRQF_NO_AUTOEN,
+-				       "usbin-icl-change", chip);
+-	if (rc < 0)
+-		return dev_err_probe(chip->dev, irq[2],
+-			"Couldn't request irq usbin-icl-change\n");
+-
+-	irq[3] = of_irq_get_byname(pdev->dev.of_node, "wdog-bark");
+-	if (irq[3] < 0) {
+-		return dev_err_probe(chip->dev, irq[3],
+-				     "Couldn't get irq wdog-bark byname\n");
+-	}
+-
+-	rc = devm_request_threaded_irq(chip->dev, irq[3], NULL,
+-				       smb2_handle_wdog_bark, IRQF_ONESHOT | IRQF_NO_AUTOEN,
+-				       "wdog-bark", chip);
+-	if (rc < 0)
+-		return dev_err_probe(chip->dev, irq[3],
+-			"Couldn't request irq wdog-bark\n");
+-
+ 	chip->usb_in_v_chan = devm_iio_channel_get(chip->dev, "usbin_v");
+ 	if (IS_ERR(chip->usb_in_v_chan))
+-		return dev_err_probe(chip->dev, PTR_ERR(chip->usb_in_v_chan),
++		return dev_err_probe(
++			chip->dev, PTR_ERR(chip->usb_in_v_chan),
+ 			"Couldn't get usbin_v IIO channel from RRADC\n");
+ 
+ 	chip->usb_in_i_chan = devm_iio_channel_get(chip->dev, "usbin_i");
+ 	if (IS_ERR(chip->usb_in_i_chan)) {
+-		return dev_err_probe(chip->dev, PTR_ERR(chip->usb_in_i_chan),
++		return dev_err_probe(
++			chip->dev, PTR_ERR(chip->usb_in_i_chan),
+ 			"Couldn't get usbin_i IIO channel from RRADC\n");
+ 	}
+ 
+@@ -1033,25 +988,35 @@ static int smb2_probe(struct platform_device *pdev)
+ 	rc = devm_delayed_work_autocancel(chip->dev, &chip->status_change_work,
+ 					  smb2_status_change_work);
+ 	if (rc)
+-		return dev_err_probe(chip->dev, rc,
+-				     "Failed to initialise status change work\n");
++		return dev_err_probe(
++			chip->dev, rc,
++			"Failed to initialise status change work\n");
+ 
+ 	rc = (chip->batt_info->voltage_max_design_uv - 3487500) / 7500 + 1;
+-	rc = regmap_update_bits(chip->regmap,
+-				chip->base + FLOAT_VOLTAGE_CFG,
+-				FLOAT_VOLTAGE_SETTING_MASK,
+-				rc);
++	rc = regmap_update_bits(chip->regmap, chip->base + FLOAT_VOLTAGE_CFG,
++				FLOAT_VOLTAGE_SETTING_MASK, rc);
+ 	if (rc < 0)
+ 		return dev_err_probe(chip->dev, rc, "Couldn't set vbat max\n");
+ 
+-	platform_set_drvdata(pdev, chip);
++	for (i = 0; i < ARRAY_SIZE(irqs); i++) {
++		irq = of_irq_get_byname(pdev->dev.of_node, irqs[i].name);
++		if (irq < 0)
++			return dev_err_probe(chip->dev, irq,
++					     "Couldn't get irq %s byname\n",
++					     irqs[i].name);
++		rc = devm_request_threaded_irq(chip->dev, irq, NULL,
++					       irqs[i].handler, IRQF_ONESHOT,
++					       irqs[i].name, chip);
++		if (rc < 0)
++			return dev_err_probe(chip->dev, irq,
++					     "Couldn't request irq %s\n",
++					     irqs[i].name);
++	}
+ 
+-	for(rc = 0; rc < N_IRQS; rc++)
+-		enable_irq(irq[rc]);
++	platform_set_drvdata(pdev, chip);
+ 
+ 	/* Initialise charger state */
+-	schedule_delayed_work(&chip->status_change_work,
+-			      msecs_to_jiffies(1000));
++	schedule_delayed_work(&chip->status_change_work, 0);
+ 
+ 	return 0;
+ }
+-- 
+GitLab
+

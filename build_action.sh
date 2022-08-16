@@ -24,6 +24,8 @@ make ARCH=arm64 defconfig sdm845.config
 # add some patch
 echo "Add MI8-dipper.patch"
 git am ../MI8-dipper.patch
+echo "supply: pmi8998_charger: drop in v5, fix slow charging patch"
+git am ../41.patch
 # add mix2s panel driver
 # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
 
