@@ -1,0 +1,69 @@
+on:
+  push:
+    tags:
+      - 'alsa-ucm-conf-*'
+
+jobs:
+  build:
+    name: Build alsa-ucm-conf package
+    runs-on: ubuntu-latest
+    container: archlinux
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install build dependencies
+      run: |
+        # Install makepkg deps
+        pacman --noconfirm -Syu
+        pacman --noconfirm -S sudo binutils fakeroot base-devel git
+
+    - name: Build Package
+      run: |
+        cd alsa-ucm-conf
+
+        # Fix permissions (can't makepkg as root)
+        echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
+        chown -R nobody .
+
+        # Package compression settings (Matches latest Arch)
+        export PKGEXT='.pkg.tar.zst'
+        export COMPRESSZST=(zstd -c -T0 --ultra -20 -)
+        export MAKEFLAGS="-j2"
+
+        # Build
+        su nobody --pty -p -s /bin/bash -c 'makepkg -f --syncdeps --skippgpcheck --noconfirm'
+
+    - name: Prepare release
+      run: |
+        mkdir release
+        mv alsa-ucm-conf/*.pkg.tar.zst release
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: alsa-ucm-conf
+        path: release
+
+  release:
+    name: Publish release
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: alsa-ucm-conf
+
+    - name: Upload assets
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.BUILD_TOKEN }}
+        file: ./*alsa-ucm-conf/*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
+
+      
