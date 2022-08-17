@@ -702,27 +702,3 @@ index 0000000..99c625d
 @@ -0,0 +1 @@
 +../../Xiaomi/beryllium/beryllium.conf
 \ No newline at end of file
-diff --git a/ucm2/sdm845/OnePlus 6.conf b/ucm2/sdm845/OnePlus 6.conf
-new file mode 120000
-index 0000000..2fd7f41
---- /dev/null
-+++ b/ucm2/sdm845/OnePlus 6.conf	
-@@ -0,0 +1 @@
-+../OnePlus/enchilada/enchilada.conf
-\ No newline at end of file
-diff --git a/ucm2/sdm845/OnePlus 6T.conf b/ucm2/sdm845/OnePlus 6T.conf
-new file mode 120000
-index 0000000..573ab39
---- /dev/null
-+++ b/ucm2/sdm845/OnePlus 6T.conf	
-@@ -0,0 +1 @@
-+../OnePlus/fajita/fajita.conf
-\ No newline at end of file
-diff --git a/ucm2/sdm845/Xiaomi Poco F1.conf b/ucm2/sdm845/Xiaomi Poco F1.conf
-new file mode 120000
-index 0000000..917bd62
---- /dev/null
-+++ b/ucm2/sdm845/Xiaomi Poco F1.conf	
-@@ -0,0 +1 @@
-+../Xiaomi/beryllium/beryllium.conf
-\ No newline at end of file
