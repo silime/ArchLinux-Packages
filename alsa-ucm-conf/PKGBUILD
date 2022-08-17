@@ -8,13 +8,13 @@ pkgdesc="ALSA Use Case Manager configuration (and topologies)"
 arch=(any)
 url="https://alsa-project.org/"
 license=(BSD)
-source=(https://www.alsa-project.org/files/pub/lib/$pkgname-$pkgver.tar.bz2)
+source=("git+git://git.alsa-project.org/alsa-ucm-conf.git")
 sha512sums=('SKIP')
 
 prepare(){
-  cd ${srcdir}/$pkgname-$pkgver/
+  cd ${srcdir}/$pkgname
   msg2 "Apply Patches"
-  patch  -bp1 <  ../../0004-ucm2-add-profiles-for-OnePlus-6-6T-Pocophone-F1.patch
+  git am  ../../0004-ucm2-add-profiles-for-OnePlus-6-6T-Pocophone-F1.patch
 
 }
 _pick() {
@@ -28,7 +28,7 @@ _pick() {
 }
 
 package() {
-  cd $pkgname-$pkgver
+  cd $pkgname
   install -vdm 755 "$pkgdir/usr/share/alsa/"
   cp -av ucm2 "$pkgdir/usr/share/alsa/"
   install -vDm 644 LICENSE -t "$pkgdir/usr/share/licenses/$pkgname"

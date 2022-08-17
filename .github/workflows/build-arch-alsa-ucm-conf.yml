@@ -22,7 +22,8 @@ jobs:
     - name: Build Package
       run: |
         cd alsa-ucm-conf
-
+        git config --global user.email "chalkinbot@users.noreply.github.com"
+        git config --global user.name "chalkinbot"
         # Fix permissions (can't makepkg as root)
         echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
         chown -R nobody .
