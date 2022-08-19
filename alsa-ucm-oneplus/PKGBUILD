@@ -7,7 +7,8 @@ arch=(any)
 url="https://gitlab.com/sdm845-mainline/alsa-ucm-conf/"
 license=('BSD-3-Clause')
 depends=('alsa-ucm-conf>=1.2.6.2')
-source=(enchilada-HiFi.conf enchilada-VoiceCall.conf enchilada.conf)
+source=(enchilada-HiFi.conf enchilada-VoiceCall.conf enchilada.conf
+		fajita-HiFi.conf  fajita.conf)
 
 package() {
 	# These UCMs came from Mobian
@@ -18,10 +19,16 @@ package() {
 	install -D -m644 "$srcdir"/enchilada-VoiceCall.conf \
 		"$pkgdir"/usr/share/alsa/ucm2/OnePlus/enchilada/VoiceCall.conf
 
+	install -D -m644 "$srcdir"/fajita.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf
+	install -D -m644 "$srcdir"/fajita-HiFi.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/HiFi.conf
+	
 	# Link for 1.2.6 and higher
-	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card
 	ln -sfv /usr/share/alsa/ucm2/OnePlus/enchilada/enchilada.conf \
-	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/simple-card/enchilada.conf
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/OnePlus 6.conf
+	ln -sfv /usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf \
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/OnePlus 6T.conf
 
 }
 
