@@ -1,11 +1,11 @@
 on:
   push:
     tags:
-      - 'alsa-ucm-conf-*'
+      - 'alsa-ucm-oneplus-*'
 
 jobs:
   build:
-    name: Build alsa-ucm-conf package
+    name: Build alsa-ucm-oneplus package
     runs-on: ubuntu-latest
     container: archlinux
 
@@ -21,9 +21,8 @@ jobs:
 
     - name: Build Package
       run: |
-        cd alsa-ucm-conf
-        git config --global user.email "chalkinbot@users.noreply.github.com"
-        git config --global user.name "chalkinbot"
+        cd alsa-ucm-oneplus
+
         # Fix permissions (can't makepkg as root)
         echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
         chown -R nobody .
@@ -39,12 +38,12 @@ jobs:
     - name: Prepare release
       run: |
         mkdir release
-        mv alsa-ucm-conf/*.pkg.tar.zst release
+        mv alsa-ucm-oneplus/*.pkg.tar.zst release
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v1
       with:
-        name: alsa-ucm-conf
+        name: alsa-ucm-oneplus
         path: release
 
   release:
@@ -56,13 +55,13 @@ jobs:
     - name: Download artifacts
       uses: actions/download-artifact@v1
       with:
-        name: alsa-ucm-conf
+        name: alsa-ucm-oneplus
 
     - name: Upload assets
       uses: svenstaro/upload-release-action@v1-release
       with:
         repo_token: ${{ secrets.BUILD_TOKEN }}
-        file: ./*alsa-ucm-conf/*
+        file: ./*alsa-ucm-oneplus/*
         tag: ${{ github.ref }}
         overwrite: true
         file_glob: true
