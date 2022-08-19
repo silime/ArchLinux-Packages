@@ -26,9 +26,9 @@ package() {
 	
 	# Link for 1.2.6 and higher
 	ln -sfv /usr/share/alsa/ucm2/OnePlus/enchilada/enchilada.conf \
-	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/OnePlus 6.conf
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/'OnePlus 6.conf'
 	ln -sfv /usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf \
-	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/OnePlus 6T.conf
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/'OnePlus 6T.conf'
 
 }
 
