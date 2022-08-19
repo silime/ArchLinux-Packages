@@ -25,6 +25,6 @@ package() {
 
 }
 
-md5sums=('skip'
-         'skip'
-         'skip')
+md5sums=('b7ccc3f3f31864a3ebe2295ed0b8d406'
+         'd135e741ec9920b2e4df904b50206e60'
+         '227810abcadfae78a119804de53e9aa6')
