@@ -19,22 +19,22 @@ package() {
 	install -D -m644 "$srcdir"/enchilada-VoiceCall.conf \
 		"$pkgdir"/usr/share/alsa/ucm2/OnePlus/enchilada/VoiceCall.conf
 
-	# install -D -m644 "$srcdir"/fajita.conf \
-	# 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf
-	# install -D -m644 "$srcdir"/fajita-HiFi.conf \
-	# 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/HiFi.conf
+	 install -D -m644 "$srcdir"/fajita.conf \
+	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf
+	 install -D -m644 "$srcdir"/fajita-HiFi.conf \
+	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/HiFi.conf
 	
 	# Link for 1.2.6 and higher
 	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845
 	ln -sfv /usr/share/alsa/ucm2/OnePlus/enchilada/enchilada.conf \
-	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/'OnePlus 6.conf'
-	# ln -sfv /usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf \
-	#        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/'OnePlus 6T.conf'
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/Oneplus-6-enchilada.conf
+	 ln -sfv /usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf \
+	        "$pkgdir"/usr/share/alsa/ucm2/conf.d/sdm845/Oneplus-6T-fajita.conf
 
 }
 
 md5sums=('b7ccc3f3f31864a3ebe2295ed0b8d406'
          'd135e741ec9920b2e4df904b50206e60'
          '227810abcadfae78a119804de53e9aa6'
-		 '935c0277236be1924e3a8c197257ab9f'
-		 '4de057f6ff1cf1e977243fcd7342a069')
+         '935c0277236be1924e3a8c197257ab9f'
+         '4de057f6ff1cf1e977243fcd7342a069')
