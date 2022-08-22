@@ -1,7 +1,7 @@
 # Maintainer: Philip Müller <philm@manjaro.org>
 pkgname=alsa-ucm-oneplus
 pkgver=0.5.8
-pkgrel=1
+pkgrel=8
 pkgdesc="UCM files for OnePlus (sdm845)"
 arch=(any)
 url="https://gitlab.com/sdm845-mainline/alsa-ucm-conf/"
