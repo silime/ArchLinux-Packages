@@ -22,7 +22,7 @@ package() {
 	install -D -m644 "$srcdir"/fajita.conf \
 	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/fajita.conf
 	install -D -m644 "$srcdir"/fajita-HiFi.conf \
-	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/HiFi.conf \
+	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/HiFi.conf
 	install -D -m644 "$srcdir"/fajita-VoiceCall.conf \
 	 	"$pkgdir"/usr/share/alsa/ucm2/OnePlus/fajita/VoiceCall.conf
 	
