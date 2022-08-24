@@ -41,6 +41,7 @@ prepare() {
     # pwd
      git am ../../../MI8-dipper.patch
      git am ../../../41.patch
+     git am ../../../nfc.patch
     make ARCH=arm64 defconfig sdm845.config
     # add mix2s panel driver
     # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
