@@ -1,15 +1,15 @@
-From 2ddf537bc1c11a8b0ddc5339ff27a8bae5cbf523 Mon Sep 17 00:00:00 2001
+From a5e3d0f593604d9c91566c845377567f7c39b39f Mon Sep 17 00:00:00 2001
 From: Silime <1776303288@qq.com>
-Date: Wed, 24 Aug 2022 08:55:38 +0800
+Date: Wed, 24 Aug 2022 09:34:08 +0800
 Subject: [PATCH] add nfc support
 
 ---
- .../boot/dts/qcom/sdm845-oneplus-common.dtsi  | 34 ++++++++++++++++++-
+ .../boot/dts/qcom/sdm845-oneplus-common.dtsi  | 30 +++++++++++++++++++
  arch/arm64/configs/sdm845.config              |  2 ++
- 2 files changed, 35 insertions(+), 1 deletion(-)
+ 2 files changed, 32 insertions(+)
 
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-oneplus-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-oneplus-common.dtsi
-index badc526e7..f2194c668 100644
+index badc526e7..eadeb6596 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-oneplus-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-oneplus-common.dtsi
 @@ -419,6 +419,23 @@ zap-shader {
@@ -36,20 +36,10 @@ index badc526e7..f2194c668 100644
  &i2c10 {
  	status = "okay";
  	clock-frequency = <100000>;
-@@ -757,7 +774,7 @@ &usb_1_dwc3 {
- 	/*
- 	 * We don't have the capability to switch modes yet.
- 	 */
--	dr_mode = "peripheral";
-+	dr_mode = "host";
- 
- 	/* fastest mode for USB 2 */
- 	maximum-speed = "high-speed";
-@@ -839,6 +856,21 @@ mux {
+@@ -839,6 +856,19 @@ mux {
  			input-enable;
  		};
  	};
-+	
 +	nfc_int_active: nfc_int_active {
 +		pins = "gpio63";
 +		function = "gpio";
@@ -63,12 +53,11 @@ index badc526e7..f2194c668 100644
 +		drive-strength = <6>;
 +		bias-pull-up;
 +	};
-+
  };
  
  &venus {
 diff --git a/arch/arm64/configs/sdm845.config b/arch/arm64/configs/sdm845.config
-index 57050c87c..4d3fe1d31 100644
+index 36f2ac836..facc79ba4 100644
 --- a/arch/arm64/configs/sdm845.config
 +++ b/arch/arm64/configs/sdm845.config
 @@ -8,6 +8,8 @@ CONFIG_HID_RMI=m
@@ -78,7 +67,7 @@ index 57050c87c..4d3fe1d31 100644
 +CONFIG_NFC_NXP_NCI=m
 +CONFIG_NFC_NXP_NCI_I2C=m
  
- # Pocophone F1
- CONFIG_DRM_PANEL_NOVATEK_NT36672A=y
+ # OnePlus 6T
+ CONFIG_SND_SOC_TFA98XX=m
 -- 
 2.34.1
