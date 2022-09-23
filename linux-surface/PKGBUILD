@@ -3,8 +3,8 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="5.19"
-pkgrel="1"
+pkgver="6.0"
+pkgrel="rc5"
 
 _pkgdesc="Linux SDM845"
 
@@ -12,7 +12,7 @@ arch=("aarch64")
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 
-_ref_ksource="971c56c93aa96196d00481760c07dcabab6e1ca2"
+_ref_ksource="0dd2af8191bc516f26ba6aac230a508601ae9145"
 
 
 source=(
@@ -40,8 +40,7 @@ prepare() {
     # echo "Add mix2s.patch"
     # pwd
      git am ../../../MI8-dipper.patch
-     git am ../../../41.patch
-     git am ../../../nfc.patch
+    # git am ../../../nfc.patch
     make ARCH=arm64 defconfig sdm845.config
     # add mix2s panel driver
     # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
