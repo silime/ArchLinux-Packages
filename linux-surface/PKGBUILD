@@ -3,7 +3,7 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="6.0-rc5"
+pkgver="6.0"
 pkgrel="0"
 
 _pkgdesc="Linux SDM845"
