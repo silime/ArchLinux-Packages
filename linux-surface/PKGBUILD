@@ -39,7 +39,7 @@ prepare() {
     # add mix2s patch
     # echo "Add mix2s.patch"
     # pwd
-     git am ../../../MI8-dipper.patch
+    # git am ../../../MI8-dipper.patch
     # git am ../../../nfc.patch
     make ARCH=arm64 defconfig sdm845.config
     # add mix2s panel driver
