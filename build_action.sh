@@ -16,12 +16,12 @@ sudo apt build-dep -y linux
 cd "${GITHUB_WORKSPACE}" || exit
 
 # download kernel source and patch
-git clone -b sdm845/6.0-dev https://gitlab.com/sdm845-mainline/linux.git --depth=1
+git clone -b sdm845/6.2-dev https://gitlab.com/sdm845-mainline/linux.git --depth=1
 cd linux  || exit
 
 # add some patch
-echo "Add MI8-dipper.patch"
-git am ../MI8-dipper.patch
+# echo "Add MI8-dipper.patch"
+# git am ../MI8-dipper.patch
 
 # add mix2s panel driver
 # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
