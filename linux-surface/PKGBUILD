@@ -18,7 +18,7 @@ _ref_ksource="ee8604001bd57428b89f3e1c3574af743b909502"
 source=(
     "kernel::git+https://gitlab.com/sdm845-mainline/linux.git#commit=${_ref_ksource}"
     "linux-sdm845.preset"
-    "linux-sdm845.istall"
+    "linux-sdm845.install"
 )
 sha256sums=('SKIP'
             'cfa96f0044eec75d65da82b74185b734a63a485ecc4c6469f693f309889bf961'
