@@ -9,7 +9,7 @@ sed -i "/deb-src/s/# //g" /etc/apt/sources.list
 sudo apt update
 sudo apt install -y wget 
 sudo apt install -y build-essential openssl pkg-config libssl-dev libncurses5-dev pkg-config minizip libelf-dev flex bison  libc6-dev libidn11-dev rsync bc liblz4-tool  
-sudo apt install -y gcc-aarch64-linux-gnu dpkg-dev dpkg git
+sudo apt install -y gcc-aarch64-linux-gnu dpkg-dev dpkg git debhelper
 sudo apt build-dep -y linux
 
 # change dir to workplace
