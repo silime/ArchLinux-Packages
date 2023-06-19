@@ -8,7 +8,7 @@ pkgname=iio-sensor-proxy
 pkgver=3.4+r5+g48cb957
 pkgrel=1
 pkgdesc='IIO accelerometer sensor to input device proxy'
-arch=('any')
+arch=('aarch64')
 url='https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/'
 license=('GPL2')
 depends=('systemd' 'libgudev' 'gtk3' 'polkit' 'libssc')
@@ -16,6 +16,7 @@ makedepends=('meson')
 checkdepends=('python-gobject' 'python-dbusmock' 'python-psutil' 'umockdev')
 _commit=48cb957c41b8d51d882219866e1366c45e21c352
 source=("git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy.git#commit=$_commit"
+        "iio-sensor-proxy.service"
         "0001-iio-sensor-proxy-depend-on-libssc.patch"
         "0002-proximity-support-SSC-proximity-sensor.patch"
         "0003-light-support-SSC-light-sensor.patch"
@@ -53,6 +54,7 @@ build() {
 
 package() {
   meson install -C build --destdir "${pkgdir}"
+    install -Dm644 ${srcdir}/iio-sensor-proxy.service "${pkgdir}/usr/lib/systemd/system/"
 }
 
 cleanup() {
@@ -60,10 +62,11 @@ cleanup() {
 }
 trap cleanup EXIT
 sha256sums=('SKIP'
-             '38eb262468c5a69e38f009045313fce90124a7e4fed7bcafc75d6b2c9ecbea34'
-             '778af9b1b3bbd80973e7ab79f4927f7ee93a0617d07c5b141e2aad7359015d74'
-             '15e66c3814a4b7ceaa9da87ac66937eb8dcaa55ce6589288e8e6cc9f3088b3e1'
-             '891079d37abf36bf8027d0ae767dec4e26e55b477a301f3cac0b3d72d15eeee5'
-             '36947db242ef400cf07899a8d2f8128e24440e9f59a31981d304ae749023f884'
-             'c32957bca21734c3ea33f0cc8fda8386eb60e3dac085a1d1199610fde6e7137d'
-             '6d0883eebda04a2077b4aed40d25f45351d602c6f89639093c056ec55cdc256f')
+            'a79d4853b60d2ddf928cc31cd33527a5a99228ed3fe0470df4f63f4519eecf2b'
+            '38eb262468c5a69e38f009045313fce90124a7e4fed7bcafc75d6b2c9ecbea34'
+            '778af9b1b3bbd80973e7ab79f4927f7ee93a0617d07c5b141e2aad7359015d74'
+            '15e66c3814a4b7ceaa9da87ac66937eb8dcaa55ce6589288e8e6cc9f3088b3e1'
+            '891079d37abf36bf8027d0ae767dec4e26e55b477a301f3cac0b3d72d15eeee5'
+            '36947db242ef400cf07899a8d2f8128e24440e9f59a31981d304ae749023f884'
+            'c32957bca21734c3ea33f0cc8fda8386eb60e3dac085a1d1199610fde6e7137d'
+            '6d0883eebda04a2077b4aed40d25f45351d602c6f89639093c056ec55cdc256f')
