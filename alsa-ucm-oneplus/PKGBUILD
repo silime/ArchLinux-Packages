@@ -1,6 +1,6 @@
 # Maintainer: Philip Müller <philm@manjaro.org>
 pkgname=alsa-ucm-oneplus
-pkgver=0.5.9
+pkgver=0.5.10
 pkgrel=0
 pkgdesc="UCM files for OnePlus (sdm845)"
 arch=(any)
@@ -40,9 +40,9 @@ package() {
 
 }
 
-md5sums=('b7ccc3f3f31864a3ebe2295ed0b8d406'
-         'd135e741ec9920b2e4df904b50206e60'
-         '227810abcadfae78a119804de53e9aa6'
-         '874ee62b98b5540814b315f292d5358a'
-         'e89dbed58a87d2df97bf7eb3894c3f10'
-         '6735d259e6566332078731709f2f1c2b')
+md5sums=('0be6016395cb028df0e555b50dfe2919'
+         '9cea1d3b0080dd15ac260843468b20b6'
+         'f4b95e0f4bad3d103066f11cef7c219e'
+         '85cede8321c4275463dc3ab1ba924250'
+         '86e9e6ab40b058da0ee8cdf623e206c5'
+         'a0238433b0e1c89f00bc2759de2055d2')
