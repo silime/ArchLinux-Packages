@@ -1,0 +1,25 @@
+From 30baabb381abe3efa50c8ba37a2446fb28be5896 Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Wed, 31 May 2023 22:19:25 +0900
+Subject: [PATCH] fix build
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index ac8a374..d8d696a 100644
+--- a/meson.build
++++ b/meson.build
+@@ -47,7 +47,7 @@ pkg = import('pkgconfig')
+ libssc_includedir = get_option('includedir')
+ libssc_glib_include_subdir = libssc_name + '-glib'
+ libssc_glib_pkgincludedir = libssc_includedir / libssc_glib_include_subdir
+-
++add_project_link_arguments('-lm', language: 'c')
+ cc = meson.get_compiler('c')
+ cc_flags = cc.get_supported_arguments([
+   '-Wno-unused-parameter',
+-- 
+2.40.1
+

@@ -1,0 +1,116 @@
+From 0f9327f15d1d76bc6b7772929e302930d428f167 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sun, 23 Apr 2023 17:54:46 +0200
+Subject: [PATCH 2/7] proximity: support SSC proximity sensor
+
+---
+ src/drivers.h           |  5 +----
+ src/drv-ssc-proximity.c | 18 ++++--------------
+ src/iio-sensor-proxy.c  |  3 ---
+ src/meson.build         |  1 +
+ 4 files changed, 6 insertions(+), 21 deletions(-)
+
+diff --git a/src/drivers.h b/src/drivers.h
+index 895cb55..5dcac8a 100644
+--- a/src/drivers.h
++++ b/src/drivers.h
+@@ -160,10 +160,7 @@ extern SensorDriver iio_buffer_light;
+ extern SensorDriver iio_buffer_compass;
+ extern SensorDriver iio_poll_proximity;
+ 
+-#ifdef LIBSSC
+-extern SensorDriver ssc_accel;
+-extern SensorDriver ssc_light;
+-extern SensorDriver ssc_compass;
++#ifdef HAS_LIBSSC
+ extern SensorDriver ssc_proximity;
+ #endif
+ 
+diff --git a/src/drv-ssc-proximity.c b/src/drv-ssc-proximity.c
+index 5e06967..c87a796 100644
+--- a/src/drv-ssc-proximity.c
++++ b/src/drv-ssc-proximity.c
+@@ -18,8 +18,6 @@
+ #include <libssc-sensor.h>
+ #include <libssc-sensor-proximity.h>
+ 
+-#define QRTR_DEVICE_URI "qrtr://9"
+-#define UDEV_DEVICE_NAME "fastrpc-sdsp"
+ #define PROXIMITY_NEAR_LEVEL "PROXIMITY_NEAR_LEVEL"
+ 
+ typedef struct DrvData {
+@@ -30,17 +28,11 @@ typedef struct DrvData {
+ static gboolean
+ ssc_proximity_discover (GUdevDevice *device)
+ {
+-	g_autoptr (SSCSensorProximity) sensor = NULL;
+-	g_autoptr (GFile) file = g_file_new_for_uri (QRTR_DEVICE_URI);
+-	g_autoptr (GError) error = NULL;
+-
+-	g_debug ("SUBSYSTEM: %s | NAME: %s", g_udev_device_get_subsystem (device), g_udev_device_get_name (device));
+-	if (g_strcmp0 (g_udev_device_get_name (device), UDEV_DEVICE_NAME))
++	if (!drv_check_udev_sensor_type (device, "ssc-proximity", NULL))
+ 		return FALSE;
+ 
+-	sensor = ssc_sensor_proximity_new_sync (file, NULL, &error);
+-	
+-	return sensor ? TRUE : FALSE;
++	g_debug ("Found SSC proximity at %s", g_udev_device_get_sysfs_path (device));
++	return TRUE;
+ }
+ 
+ static void
+@@ -50,7 +42,6 @@ measurement_cb (SSCSensorProximity *sensor, gboolean near, gpointer user_data)
+ 	ProximityReadings readings;
+ 
+ 	readings.is_near = near ? PROXIMITY_NEAR_TRUE : PROXIMITY_NEAR_FALSE;
+-	g_debug ("SSC Proximity sensor '%s': near: %s", sensor_device->name, readings.is_near ? "NEAR" : "FAR");
+ 	sensor_device->callback_func (sensor_device, (gpointer) &readings, sensor_device->user_data);
+ }
+ 
+@@ -59,7 +50,6 @@ ssc_proximity_open (GUdevDevice *device)
+ {
+ 	SensorDevice *sensor_device;
+ 	DrvData *drv_data;
+-	g_autoptr (GFile) file = g_file_new_for_uri (QRTR_DEVICE_URI);
+ 	g_autoptr (GError) error = NULL;
+ 
+ 	sensor_device = g_new0 (SensorDevice, 1);
+@@ -67,7 +57,7 @@ ssc_proximity_open (GUdevDevice *device)
+ 	drv_data = (DrvData *) sensor_device->priv;
+ 
+ 	/* Create sensor */
+-	drv_data->sensor = ssc_sensor_proximity_new_sync (file, NULL, &error);
++	drv_data->sensor = ssc_sensor_proximity_new_sync (NULL, &error);
+ 	if (!drv_data->sensor) {
+ 		g_warning ("Creating SSC proximity sensor failed: %s", error ? error->message : "UNKNOWN");
+ 		return NULL;
+diff --git a/src/iio-sensor-proxy.c b/src/iio-sensor-proxy.c
+index 17debbb..dbd3f6e 100644
+--- a/src/iio-sensor-proxy.c
++++ b/src/iio-sensor-proxy.c
+@@ -74,9 +74,6 @@ static const SensorDriver * const drivers[] = {
+ 	&iio_buffer_compass,
+ 	&iio_poll_proximity,
+ #ifdef HAS_LIBSSC
+-	&ssc_accel,
+-	&ssc_light,
+-	&ssc_compass,
+ 	&ssc_proximity,
+ #endif
+ };
+diff --git a/src/meson.build b/src/meson.build
+index 90d550d..7019b1c 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -35,6 +35,7 @@ sources = [
+   'drv-iio-buffer-light.c',
+   'drv-iio-buffer-compass.c',
+   'drv-iio-poll-proximity.c',
++  'drv-ssc-proximity.c',
+   'iio-buffer-utils.c',
+   'accel-mount-matrix.c',
+   'accel-scale.c',
+-- 
+2.40.0
+

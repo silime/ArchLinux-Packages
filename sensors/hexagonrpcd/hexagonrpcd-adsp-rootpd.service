@@ -1,0 +1,13 @@
+[Unit]
+Description=HexagonRPCD ADSP RootPD
+After=dbus.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp
+User=fastrpc
+Group=fastrpc
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

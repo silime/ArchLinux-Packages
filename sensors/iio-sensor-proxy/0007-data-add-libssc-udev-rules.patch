@@ -1,0 +1,64 @@
+From 6a8c37f8f180ed3d0589948d28b1d9322a0cae3c Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Wed, 26 Apr 2023 18:54:07 +0200
+Subject: [PATCH 7/7] data: add libssc udev rules
+
+---
+ data/80-iio-sensor-proxy-libssc.rules | 11 +++++++++++
+ data/80-iio-sensor-proxy.rules        |  2 --
+ data/meson.build                      | 10 +++++++++-
+ 3 files changed, 20 insertions(+), 3 deletions(-)
+ create mode 100644 data/80-iio-sensor-proxy-libssc.rules
+
+diff --git a/data/80-iio-sensor-proxy-libssc.rules b/data/80-iio-sensor-proxy-libssc.rules
+new file mode 100644
+index 0000000..c4fad16
+--- /dev/null
++++ b/data/80-iio-sensor-proxy-libssc.rules
+@@ -0,0 +1,11 @@
++# iio-sensor-proxy: libssc
++# IIO sensor to D-Bus proxy with libssc support
++
++ACTION=="remove", GOTO="iio_sensor_proxy_libssc_end"
++
++# Set the sensor type for all the types we recognise for SDSP/ADSP.
++# Some devices expose the sensors via a separate SDSP while others re-use ADSP.
++# These DSPs expose itself as /dev/fastrpc-* in the misc subsystem.
++SUBSYSTEM=="misc", KERNEL=="fastrpc-*", ENV{IIO_SENSOR_PROXY_TYPE}+="ssc-accel ssc-light ssc-proximity ssc-compass"
++
++LABEL="iio_sensor_proxy_libssc_end"
+diff --git a/data/80-iio-sensor-proxy.rules b/data/80-iio-sensor-proxy.rules
+index bd917b2..85d93f9 100644
+--- a/data/80-iio-sensor-proxy.rules
++++ b/data/80-iio-sensor-proxy.rules
+@@ -16,8 +16,6 @@ SUBSYSTEM=="iio", TEST=="scan_elements/in_intensity_both_en", ENV{IIO_SENSOR_PRO
+ SUBSYSTEM=="iio", TEST=="in_proximity_raw", ENV{IIO_SENSOR_PROXY_TYPE}+="iio-poll-proximity"
+ SUBSYSTEM=="input", ENV{ID_INPUT_ACCELEROMETER}=="1", ENV{IIO_SENSOR_PROXY_TYPE}+="input-accel"
+ 
+-SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp", ENV{IIO_SENSOR_PROXY_TYPE}+="ssc-accel"
+-
+ ENV{IIO_SENSOR_PROXY_TYPE}=="", GOTO="iio_sensor_proxy_end"
+ 
+ # We got here because we have a sensor type, which means we need the service
+diff --git a/data/meson.build b/data/meson.build
+index 97dbc07..8b78125 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -1,5 +1,13 @@
++rules = files(
++  '80-iio-sensor-proxy.rules'
++)
++
++if get_option('ssc-support')
++  rules += files('80-iio-sensor-proxy-libssc.rules')
++endif
++
+ install_data(
+-  '80-iio-sensor-proxy.rules',
++  rules,
+   install_dir: udev_rules_dir
+ )
+ 
+-- 
+2.40.0
+

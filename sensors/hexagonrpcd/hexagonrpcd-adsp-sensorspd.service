@@ -1,0 +1,13 @@
+[Unit]
+Description=HexagonRPCD ADSP SensorPD
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp -s
+User=fastrpc
+Group=fastrpc
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,83 @@
+From 929894825c0caa1876e73bd30190e093af2a5022 Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Wed, 29 Mar 2023 16:43:12 +0200
+Subject: [PATCH 3/7] libqmi-glib,proxy: handle QMUX and QRTR messages
+
+Handle QMUX and QRTR messages in QMI Message:
+
+- Use QmiService enum instead of guint8
+- Handle service ID extraction from QMI message based on marker
+- Allow messages with QMUX and QRTR marker
+---
+ src/libqmi-glib/qmi-proxy.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/src/libqmi-glib/qmi-proxy.c b/src/libqmi-glib/qmi-proxy.c
+index eeff4bf0..8fc49071 100644
+--- a/src/libqmi-glib/qmi-proxy.c
++++ b/src/libqmi-glib/qmi-proxy.c
+@@ -596,7 +596,7 @@ track_cid (Client     *client,
+     guint16        error_status;
+     guint16        error_code;
+     GError        *error = NULL;
+-    guint8         service_tmp;
++    QmiService     service_tmp;
+     QmiClientInfo  info;
+     gint           i;
+ 
+@@ -616,13 +616,14 @@ track_cid (Client     *client,
+ 
+     offset = 0;
+     if (((init_offset = qmi_message_tlv_read_init (message, QMI_MESSAGE_OUTPUT_TLV_ALLOCATION_INFO, NULL, &error)) == 0) ||
+-        !qmi_message_tlv_read_guint8 (message, init_offset, &offset, &service_tmp, &error) ||
++	(qmi_message_get_marker (message) == QMI_MESSAGE_QMUX_MARKER && !qmi_message_tlv_read_guint8 (message, init_offset, &offset, (guint8 *) &service_tmp, &error)) ||
++	(qmi_message_get_marker (message) == QMI_MESSAGE_QRTR_MARKER && !qmi_message_tlv_read_guint16 (message, init_offset, &offset, QMI_ENDIAN_LITTLE, (guint16 *) &service_tmp, &error)) ||
+         !qmi_message_tlv_read_guint8 (message, init_offset, &offset, &(info.cid), &error)) {
+         g_warning ("invalid 'CTL allocate CID' response: missing or invalid allocation info TLV: %s", error->message);
+         g_error_free (error);
+         return;
+     }
+-    info.service = (QmiService)service_tmp;
++    info.service = service_tmp;
+ 
+     /* Check if it already exists */
+     i = qmi_client_info_array_lookup_cid (client->qmi_client_info_array, info.service, info.cid);
+@@ -643,7 +644,7 @@ untrack_cid (QmiProxy   *self,
+     gsize          offset = 0;
+     gsize          init_offset;
+     GError        *error = NULL;
+-    guint8         service_tmp;
++    QmiService     service_tmp;
+     QmiClientInfo  info;
+     gint           i;
+ 
+@@ -651,13 +652,14 @@ untrack_cid (QmiProxy   *self,
+     g_assert (qmi_message_is_request (message));
+ 
+     if (((init_offset = qmi_message_tlv_read_init (message, QMI_MESSAGE_INPUT_TLV_RELEASE_INFO, NULL, &error)) == 0) ||
+-        !qmi_message_tlv_read_guint8 (message, init_offset, &offset, &service_tmp, &error) ||
++	(qmi_message_get_marker (message) == QMI_MESSAGE_QMUX_MARKER && !qmi_message_tlv_read_guint8 (message, init_offset, &offset, (guint8 *) &service_tmp, &error)) ||
++	(qmi_message_get_marker (message) == QMI_MESSAGE_QRTR_MARKER && !qmi_message_tlv_read_guint16 (message, init_offset, &offset, QMI_ENDIAN_LITTLE, (guint16 *) &service_tmp, &error)) ||
+         !qmi_message_tlv_read_guint8 (message, init_offset, &offset, &(info.cid), &error)) {
+         g_warning ("invalid 'CTL release CID' request: missing or invalid release info TLV: %s", error->message);
+         g_error_free (error);
+         return;
+     }
+-    info.service = (QmiService)service_tmp;
++    info.service = service_tmp;
+ 
+     /* Check if it already exists in the client */
+     i = qmi_client_info_array_lookup_cid (client->qmi_client_info_array, info.service, info.cid);
+@@ -918,7 +920,8 @@ parse_request (QmiProxy *self,
+          * If we broke framing, an error should be reported and the device
+          * should get closed */
+         if (client->buffer->len > 0 &&
+-            client->buffer->data[0] != QMI_MESSAGE_QMUX_MARKER) {
++            client->buffer->data[0] != QMI_MESSAGE_QMUX_MARKER &&
++            client->buffer->data[0] != QMI_MESSAGE_QRTR_MARKER) {
+             /* TODO: Report fatal error */
+             g_warning ("QMI framing error detected");
+             return;
+-- 
+2.39.2
+

@@ -1,0 +1,43 @@
+pkgname=hexagonrpcd
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Qualcomm HexagonFS daemon"
+arch=('any')
+license=(GPL-3.0-or-later)
+depends=(libmbim libqrtr-glib qrtr qmic)
+_commit=23b7681f3faad422fa5751886f901bf03775243d
+source=("git+https://gitlab.com/flamingradian/sensh.git#commit=$_commit"
+	"noshared.patch"
+	"10-fastrpc.rules"
+	"hexagonrpcd-adsp-rootpd.service"
+	"hexagonrpcd-adsp-sensorspd.service"
+	"hexagonrpcd-sdsp.service"
+	"hexagonrpcd.install")
+sha256sums=('SKIP'
+            '4ea268fb8998ef9fc2af3a7793c7327828c4506f661b773d869d23aea44f189e'
+            '41dfc4e8c4fd88f461a5a6e4a4e86849eb302f8bcb2b5ce2efa9690f5415d52d'
+            '1b9c268e843d0a9d4acd9330bf8adc4bf41c06f628031ae9672ba7918cd11dfe'
+            'daa72031644468a9c2ab2e0952eec25f01e07dce5d4d3ad8d53b1094148d128a'
+            'fce6f3a51d961078885ae0c7ffafc2d351297042c39918b06526ee50806d717a'
+            'f5e11cc1099b134be4f377c3ad0abcabc84bad3f808fa1d58eefa1555645eebd')
+
+prepare() {
+	cd sensh/fastrpc
+	patch -Np1 -i "${srcdir}/noshared.patch"
+}
+
+build() {
+  arch-meson sensh/fastrpc build  -D b_lto=true
+  meson compile -C build
+}
+package() {
+  meson install -C build --destdir "${pkgdir}"
+  install="${pkgname}.install"
+  # Install service files
+  	install -Dm755 "${srcdir}/hexagonrpcd-adsp-rootpd.service" -t "${pkgdir}/usr/lib/systemd/system/"
+  	install -Dm755 "${srcdir}/hexagonrpcd-adsp-sensorspd.service" -t "${pkgdir}/usr/lib/systemd/system/"
+  	install -Dm755 "${srcdir}/hexagonrpcd-sdsp.service" -t "${pkgdir}/usr/lib/systemd/system/"
+
+  	# Install rules file
+  	install -Dm644 "${srcdir}/10-fastrpc.rules" -t "${pkgdir}/usr/lib/udev/rules.d/"
+}

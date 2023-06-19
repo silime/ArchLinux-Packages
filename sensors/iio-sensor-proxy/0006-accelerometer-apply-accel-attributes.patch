@@ -1,0 +1,81 @@
+From 8c15df3b56af5a5414b90abd746f824990a3441c Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Tue, 25 Apr 2023 18:34:45 +0200
+Subject: [PATCH 6/7] accelerometer: apply accel attributes
+
+Mount matrix, location, and scaling
+---
+ src/drv-ssc-accel.c | 27 +++++++++++++++++++++++----
+ 1 file changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/src/drv-ssc-accel.c b/src/drv-ssc-accel.c
+index a9b5eec..a64f28e 100644
+--- a/src/drv-ssc-accel.c
++++ b/src/drv-ssc-accel.c
+@@ -7,6 +7,7 @@
+  */
+ 
+ #include "drivers.h"
++#include "accel-mount-matrix.h"
+ 
+ #include <fcntl.h>
+ #include <unistd.h>
+@@ -21,6 +22,9 @@
+ typedef struct DrvData {
+ 	SSCSensorAccelerometer *sensor;
+ 	guint measurement_id;
++	AccelVec3 *mount_matrix;
++	AccelLocation location;
++	AccelScale scale;
+ } DrvData;
+ 
+ static gboolean
+@@ -37,12 +41,21 @@ static void
+ measurement_cb (SSCSensorAccelerometer *sensor, gfloat accel_x, gfloat accel_y, gfloat accel_z, gpointer user_data)
+ {
+ 	SensorDevice *sensor_device = user_data;
++	DrvData *drv_data = (DrvData *) sensor_device->priv;
+ 	AccelReadings readings;
++	AccelVec3 tmp;
++
++	tmp.x = accel_x;
++	tmp.y = accel_y;
++	tmp.z = accel_z;
+ 
+-	readings.accel_x = accel_x;
+-	readings.accel_y = accel_y;
+-	readings.accel_z = accel_z;
+-	set_accel_scale (&readings.scale, 1.0);
++	if (!apply_mount_matrix (drv_data->mount_matrix, &tmp))
++		g_warning ("Could not apply mount matrix");
++
++	readings.accel_x = tmp.x;
++	readings.accel_y = tmp.y;
++	readings.accel_z = tmp.z;
++	copy_accel_scale (&readings.scale, drv_data->scale);
+ 
+ 	sensor_device->callback_func (sensor_device, (gpointer) &readings, sensor_device->user_data);
+ }
+@@ -58,6 +71,11 @@ ssc_accelerometer_open (GUdevDevice *device)
+ 	sensor_device->priv = g_new0 (DrvData, 1);
+ 	drv_data = (DrvData *) sensor_device->priv;
+ 
++	/* Setup accel attributes */
++	drv_data->mount_matrix = setup_mount_matrix (device);
++	drv_data->location = setup_accel_location (device);
++	set_accel_scale (&drv_data->scale, 1.0);
++
+ 	/* Create sensor */
+ 	drv_data->sensor = ssc_sensor_accelerometer_new_sync (NULL, &error);
+ 	if (!drv_data->sensor) {
+@@ -99,6 +117,7 @@ ssc_accelerometer_close (SensorDevice *sensor_device)
+ 		g_warning ("Closing SSC accelerometer sensor failed: %s", error ? error->message : "UNKNOWN");
+ 
+ 	g_clear_object (&drv_data->sensor);
++	g_clear_pointer (&drv_data->mount_matrix, g_free);
+ 	g_clear_pointer (&sensor_device->priv, g_free);
+ 	g_free (sensor_device);
+ }
+-- 
+2.40.0
+

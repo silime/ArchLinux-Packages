@@ -1,0 +1,25 @@
+[Unit]
+Description=IIO Sensor Proxy service
+After=hexagonrpcd-sdsp.service
+
+[Service]
+Type=dbus
+BusName=net.hadess.SensorProxy
+ExecStart=/usr/lib/iio-sensor-proxy
+#Uncomment this to enable debug
+#Environment="G_MESSAGES_DEBUG=all"
+
+# Lockdown
+#ProtectSystem=strict
+#ProtectControlGroups=true
+#ProtectHome=true
+#ProtectKernelModules=true
+#PrivateTmp=true
+#RestrictAddressFamilies=AF_UNIX AF_LOCAL AF_NETLINK
+#MemoryDenyWriteExecute=true
+#RestrictRealtime=true
+Restart=always
+RestartSec=2
+StartLimitInterval=5
+[Install]
+WantedBy=multi-user.target

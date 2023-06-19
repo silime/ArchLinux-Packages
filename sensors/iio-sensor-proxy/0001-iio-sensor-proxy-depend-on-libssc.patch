@@ -1,0 +1,274 @@
+From 4fd3611f93b0a35e8311c6a6e3fe03545154d8bb Mon Sep 17 00:00:00 2001
+From: Dylan Van Assche <me@dylanvanassche.be>
+Date: Sun, 23 Apr 2023 16:54:10 +0200
+Subject: [PATCH 1/7] iio-sensor-proxy: depend on libssc
+
+---
+ data/80-iio-sensor-proxy.rules |   2 +
+ meson.build                    |   3 +
+ meson_options.txt              |   4 ++
+ src/drivers.h                  |   7 ++
+ src/drv-ssc-proximity.c        | 121 +++++++++++++++++++++++++++++++++
+ src/iio-sensor-proxy.c         |  21 +++++-
+ src/meson.build                |   7 ++
+ 7 files changed, 164 insertions(+), 1 deletion(-)
+ create mode 100644 src/drv-ssc-proximity.c
+
+diff --git a/data/80-iio-sensor-proxy.rules b/data/80-iio-sensor-proxy.rules
+index 85d93f9..bd917b2 100644
+--- a/data/80-iio-sensor-proxy.rules
++++ b/data/80-iio-sensor-proxy.rules
+@@ -16,6 +16,8 @@ SUBSYSTEM=="iio", TEST=="scan_elements/in_intensity_both_en", ENV{IIO_SENSOR_PRO
+ SUBSYSTEM=="iio", TEST=="in_proximity_raw", ENV{IIO_SENSOR_PROXY_TYPE}+="iio-poll-proximity"
+ SUBSYSTEM=="input", ENV{ID_INPUT_ACCELEROMETER}=="1", ENV{IIO_SENSOR_PROXY_TYPE}+="input-accel"
+ 
++SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp", ENV{IIO_SENSOR_PROXY_TYPE}+="ssc-accel"
++
+ ENV{IIO_SENSOR_PROXY_TYPE}=="", GOTO="iio_sensor_proxy_end"
+ 
+ # We got here because we have a sensor type, which means we need the service
+diff --git a/meson.build b/meson.build
+index b45493f..bef4209 100644
+--- a/meson.build
++++ b/meson.build
+@@ -46,6 +46,9 @@ gio_dep = dependency('gio-2.0')
+ gudev_dep = dependency('gudev-1.0', version: '>= 237')
+ polkit_gobject_dep = dependency('polkit-gobject-1', version: '>= 0.91')
+ polkit_policy_directory = polkit_gobject_dep.get_pkgconfig_variable('policydir')
++if get_option('ssc-support')
++  libssc_dep = dependency('libssc-glib')
++endif
+ 
+ xmllint = find_program('xmllint', required: false)
+ 
+diff --git a/meson_options.txt b/meson_options.txt
+index de5fbf4..2b60f82 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -18,6 +18,10 @@ option('geoclue-user',
+        description: 'The USER (existing) as which geoclue service is running',
+        type: 'string',
+        value: 'geoclue')
++option('ssc-support',
++       description: 'Enable Qualcomm SSC support',
++       type: 'boolean',
++       value: false)
+ option('gtk_doc',
+        type: 'boolean',
+        value: false,
+diff --git a/src/drivers.h b/src/drivers.h
+index b760faa..895cb55 100644
+--- a/src/drivers.h
++++ b/src/drivers.h
+@@ -160,4 +160,11 @@ extern SensorDriver iio_buffer_light;
+ extern SensorDriver iio_buffer_compass;
+ extern SensorDriver iio_poll_proximity;
+ 
++#ifdef LIBSSC
++extern SensorDriver ssc_accel;
++extern SensorDriver ssc_light;
++extern SensorDriver ssc_compass;
++extern SensorDriver ssc_proximity;
++#endif
++
+ gboolean drv_check_udev_sensor_type (GUdevDevice *device, const gchar *match, const char *name);
+diff --git a/src/drv-ssc-proximity.c b/src/drv-ssc-proximity.c
+new file mode 100644
+index 0000000..5e06967
+--- /dev/null
++++ b/src/drv-ssc-proximity.c
+@@ -0,0 +1,121 @@
++/*
++ * Copyright (c) 2023 Dylan Van Assche
++ *
++ * This program is free software; you can redistribute it and/or modify it
++ * under the terms of the GNU General Public License version 3 as published by
++ * the Free Software Foundation.
++ */
++
++#include "drivers.h"
++
++#include <fcntl.h>
++#include <unistd.h>
++#include <string.h>
++#include <errno.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <gio/gio.h>
++#include <libssc-sensor.h>
++#include <libssc-sensor-proximity.h>
++
++#define QRTR_DEVICE_URI "qrtr://9"
++#define UDEV_DEVICE_NAME "fastrpc-sdsp"
++#define PROXIMITY_NEAR_LEVEL "PROXIMITY_NEAR_LEVEL"
++
++typedef struct DrvData {
++	SSCSensorProximity *sensor;
++	guint measurement_id;
++} DrvData;
++
++static gboolean
++ssc_proximity_discover (GUdevDevice *device)
++{
++	g_autoptr (SSCSensorProximity) sensor = NULL;
++	g_autoptr (GFile) file = g_file_new_for_uri (QRTR_DEVICE_URI);
++	g_autoptr (GError) error = NULL;
++
++	g_debug ("SUBSYSTEM: %s | NAME: %s", g_udev_device_get_subsystem (device), g_udev_device_get_name (device));
++	if (g_strcmp0 (g_udev_device_get_name (device), UDEV_DEVICE_NAME))
++		return FALSE;
++
++	sensor = ssc_sensor_proximity_new_sync (file, NULL, &error);
++	
++	return sensor ? TRUE : FALSE;
++}
++
++static void
++measurement_cb (SSCSensorProximity *sensor, gboolean near, gpointer user_data)
++{
++	SensorDevice *sensor_device = user_data;
++	ProximityReadings readings;
++
++	readings.is_near = near ? PROXIMITY_NEAR_TRUE : PROXIMITY_NEAR_FALSE;
++	g_debug ("SSC Proximity sensor '%s': near: %s", sensor_device->name, readings.is_near ? "NEAR" : "FAR");
++	sensor_device->callback_func (sensor_device, (gpointer) &readings, sensor_device->user_data);
++}
++
++static SensorDevice *
++ssc_proximity_open (GUdevDevice *device)
++{
++	SensorDevice *sensor_device;
++	DrvData *drv_data;
++	g_autoptr (GFile) file = g_file_new_for_uri (QRTR_DEVICE_URI);
++	g_autoptr (GError) error = NULL;
++
++	sensor_device = g_new0 (SensorDevice, 1);
++	sensor_device->priv = g_new0 (DrvData, 1);
++	drv_data = (DrvData *) sensor_device->priv;
++
++	/* Create sensor */
++	drv_data->sensor = ssc_sensor_proximity_new_sync (file, NULL, &error);
++	if (!drv_data->sensor) {
++		g_warning ("Creating SSC proximity sensor failed: %s", error ? error->message : "UNKNOWN");
++		return NULL;
++	}
++	g_object_get (drv_data->sensor,
++                      SSC_SENSOR_NAME, &sensor_device->name,
++		      NULL);
++
++	/* Start listening for measurements */
++	drv_data->measurement_id = g_signal_connect (drv_data->sensor,
++			                             "measurement",
++						     G_CALLBACK (measurement_cb),
++						     sensor_device);
++
++	/* Enable sensor */
++	if (!ssc_sensor_proximity_open_sync (drv_data->sensor, NULL, &error)) {
++		g_warning ("Opening SSC proximity sensor failed: %s", error ? error->message : "UNKNOWN");
++		g_object_unref (sensor_device);
++		return NULL;
++	}
++
++	return sensor_device;
++}
++
++static void
++ssc_proximity_close (SensorDevice *sensor_device)
++{
++	g_autoptr (GError) error = NULL;
++	DrvData *drv_data = (DrvData *) sensor_device->priv;
++
++	/* Stop listening for measurements */
++	g_warn_if_fail (drv_data->measurement_id > 0);
++	g_signal_handler_disconnect (drv_data->sensor, drv_data->measurement_id);
++
++	/* Disable sensor */
++	if (!ssc_sensor_proximity_close_sync (drv_data->sensor, NULL, &error))
++		g_warning ("Closing SSC proximity sensor failed: %s", error ? error->message : "UNKNOWN");
++
++	g_clear_object (&drv_data->sensor);
++	g_clear_pointer (&sensor_device->priv, g_free);
++	g_free (sensor_device);
++}
++
++SensorDriver ssc_proximity = {
++	.driver_name = "SSC proximity sensor",
++	.type = DRIVER_TYPE_PROXIMITY,
++
++	.discover = ssc_proximity_discover,
++	.open = ssc_proximity_open,
++	.close = ssc_proximity_close,
++};
+diff --git a/src/iio-sensor-proxy.c b/src/iio-sensor-proxy.c
+index 836e742..17debbb 100644
+--- a/src/iio-sensor-proxy.c
++++ b/src/iio-sensor-proxy.c
+@@ -73,6 +73,12 @@ static const SensorDriver * const drivers[] = {
+ 	&fake_light,
+ 	&iio_buffer_compass,
+ 	&iio_poll_proximity,
++#ifdef HAS_LIBSSC
++	&ssc_accel,
++	&ssc_light,
++	&ssc_compass,
++	&ssc_proximity,
++#endif
+ };
+ 
+ static ReadingsUpdateFunc driver_type_to_callback_func (DriverType type);
+@@ -122,6 +128,11 @@ find_sensors (GUdevClient *client,
+ 	platform = g_udev_client_query_by_subsystem (client, "platform");
+ 	devices = g_list_concat (devices, input);
+ 	devices = g_list_concat (devices, platform);
++#ifdef HAS_LIBSSC
++	GList *fastrpc;
++	fastrpc = g_udev_client_query_by_subsystem (client, "misc");
++	devices = g_list_concat (devices, fastrpc);
++#endif
+ 
+ 	/* Find the devices */
+ 	for (l = devices; l != NULL; l = l->next) {
+@@ -684,7 +695,15 @@ name_acquired_handler (GDBusConnection *connection,
+ 		       gpointer         user_data)
+ {
+ 	SensorData *data = user_data;
+-	const gchar * const subsystems[] = { "iio", "input", "platform", NULL };
++	const gchar * const subsystems[] = {
++        "iio",
++        "input",
++        "platform",
++#ifdef HAS_LIBSSC
++        "misc",
++#endif
++        NULL
++    };
+ 	guint i;
+ 
+ 	data->client = g_udev_client_new (subsystems);
+diff --git a/src/meson.build b/src/meson.build
+index 8ddd37b..90d550d 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,5 +1,8 @@
+ config_h = configuration_data()
+ config_h.set_quoted('VERSION', meson.project_version())
++if get_option('ssc-support')
++  config_h.set_quoted('HAS_LIBSSC', '1')
++endif
+ config_h_files = configure_file(
+   output: 'config.h',
+   configuration: config_h
+@@ -7,6 +10,10 @@ config_h_files = configure_file(
+ 
+ deps = [ gio_dep, gudev_dep, mathlib_dep, polkit_gobject_dep ]
+ 
++if get_option('ssc-support')
++  deps = deps + [ libssc_dep ]
++endif
++
+ resources = gnome.compile_resources(
+     'iio-sensor-proxy-resources', 'iio-sensor-proxy.gresource.xml',
+     c_name: 'iio_sensor_proxy',
+-- 
+2.40.0
+

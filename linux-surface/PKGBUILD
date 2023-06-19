@@ -3,7 +3,7 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="6.3"
+pkgver="6.4"
 pkgrel="0"
 
 _pkgdesc="Linux SDM845"
@@ -11,21 +11,22 @@ _pkgdesc="Linux SDM845"
 arch=("aarch64")
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
-
-_ref_ksource="ee8604001bd57428b89f3e1c3574af743b909502"
-
-
+_config="config-$_flavor.$arch"
+_tag="sdm845-6.4-dev"
+_branch="sdm845/6.4-dev"
 source=(
-    "kernel::git+https://gitlab.com/sdm845-mainline/linux.git#commit=${_ref_ksource}"
+    "linux-${_tag}.tar.gz::https://gitlab.com/sdm845-mainline/linux/-/archive/${_branch}/linux-${_tag}.tar.gz"
     "linux-sdm845.preset"
     "linux-sdm845.install"
+    "config-sdm845.aarch64"
 )
 sha256sums=('SKIP'
             'cfa96f0044eec75d65da82b74185b734a63a485ecc4c6469f693f309889bf961'
-            'e7ba57b8608046e3e3e594735599a7387018f76ab7eab637f9faa22d1ba1ed53')
+            'e7ba57b8608046e3e3e594735599a7387018f76ab7eab637f9faa22d1ba1ed53'
+            'c814c34f1a7b39fbe4ce0a4b7e9ed4dbc8e4871bfd3f9b09a8a3d43c8d1b3fbb')
 
 prepare() {
-    cd "${srcdir}/kernel"
+    cd "${srcdir}/linux-${_tag}"
 
     msg2 "Setting version..."
 
@@ -35,19 +36,11 @@ prepare() {
     echo "${pkgbase#linux}" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    # ./scripts/kconfig/merge_config.sh -m "${srcdir}/base.config" "${srcdir}/surface.config" "${srcdir}/overrides.config"
-    # add mix2s patch
-    # echo "Add mix2s.patch"
-    # pwd
-    # git am ../../../MI8-dipper.patch
-    # git am ../../../nfc.patch
     make ARCH=arm64 defconfig sdm845.config
-    # add mix2s panel driver
-    # sed -i "s/^.*CONFIG_DRM_PANEL_JDI_NT35596S.*$/CONFIG_DRM_PANEL_JDI_NT35596S=y/" .config
 }
 
 build() {
-    cd "${srcdir}/kernel"
+    cd "${srcdir}/linux-${_tag}"
 
     # get kernel version
     msg2 "Preparing kernel build..."
@@ -70,7 +63,7 @@ _package() {
     optdepends=("crda: to set the correct wireless channels of your country")
     install="${pkgbase}.install"
 
-    cd "${srcdir}/kernel"
+   cd "${srcdir}/linux-${_tag}"
 
     local kernver="$(<version)"
     local modulesdir="${pkgdir}/usr/lib/modules/${kernver}"
@@ -111,7 +104,7 @@ _package() {
 _package-headers() {
     pkgdesc="${_pkgdesc} kernel header files and scripts for building external modules"
 
-    cd "${srcdir}/kernel"
+    cd "${srcdir}/linux-${_tag}"
 
     local builddir="${pkgdir}/usr/lib/modules/$(<version)/build"
 
