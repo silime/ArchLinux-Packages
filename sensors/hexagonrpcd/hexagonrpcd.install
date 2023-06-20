@@ -1,23 +1,18 @@
 pre_install() {
   echo "Creating fastrpc user and group..."
-  addgroup -S fastrpc 2>/dev/null
-  adduser -S -D -H -h /var/lib/fastrpc -s /sbin/nologin -G fastrpc -g "FastRPC" fastrpc 2>/dev/null
+  useradd -b /var/lib/fastrpc -U -s /sbin/nologin -r fastrpc
 }
 post_install() {
+  echo "Enable and start hexagonrpcd services"
   # Enable and start hexagonrpcd services
-  systemctl start hexagonrpcd-adsp-rootpd.service
-  systemctl start hexagonrpcd-adsp-sensorspd.service
+  systemctl enable hexagonrpcd-sdsp.service
   systemctl start hexagonrpcd-sdsp.service
 }
 pre_remove() {
   # Stop and disable hexagonrpcd services
-  systemctl stop hexagonrpcd-adsp-rootpd.service
-  systemctl stop hexagonrpcd-adsp-sensorspd.service
   systemctl stop hexagonrpcd-sdsp.service
-  systemctl disable hexagonrpcd-adsp-rootpd.service
-  systemctl disable hexagonrpcd-adsp-sensorspd.service
   systemctl disable hexagonrpcd-sdsp.service
   # Remove fastrpc user and group
-  deluser fastrpc 2>/dev/null
-  delgroup fastrpc 2>/dev/null
+  userdel fastrpc 2>/dev/null
+  groupdel fastrpc 2>/dev/null
 }

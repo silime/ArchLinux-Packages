@@ -16,10 +16,10 @@ source=("git+https://gitlab.com/flamingradian/sensh.git#commit=$_commit"
 sha256sums=('SKIP'
             '4ea268fb8998ef9fc2af3a7793c7327828c4506f661b773d869d23aea44f189e'
             '41dfc4e8c4fd88f461a5a6e4a4e86849eb302f8bcb2b5ce2efa9690f5415d52d'
-            '1b9c268e843d0a9d4acd9330bf8adc4bf41c06f628031ae9672ba7918cd11dfe'
+            '1f1c6569570f2658c5deed7417b2aeb12ea69beab82c6e835d1e294195894819'
             'daa72031644468a9c2ab2e0952eec25f01e07dce5d4d3ad8d53b1094148d128a'
             'fce6f3a51d961078885ae0c7ffafc2d351297042c39918b06526ee50806d717a'
-            'f5e11cc1099b134be4f377c3ad0abcabc84bad3f808fa1d58eefa1555645eebd')
+            'a19ca1b11b34980d75557e454222538a7d082cf991e17c574f24a20112d45166')
 
 prepare() {
 	cd sensh/fastrpc
