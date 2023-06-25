@@ -14,8 +14,12 @@ depends=(systemd libgudev polkit ppp libqmi libmbim
 makedepends=(gtk-doc gobject-introspection vala meson git bash-completion)
 checkdepends=(python-gobject python-dbus)
 _commit=6aa0ff583d04aea88b4da7a1c20049f57062dab6  # tags/1.20.6^0
-source=("git+https://gitlab.freedesktop.org/mobile-broadband/ModemManager.git#commit=$_commit")
-sha256sums=('SKIP')
+source=("git+https://gitlab.freedesktop.org/mobile-broadband/ModemManager.git#commit=$_commit"
+        "modemmanager.rules"
+        "broadband-modem-qmi-enable-disable-messaging-AT-unso.patch")
+sha256sums=('SKIP'
+            '3e1be3946364160a3e768cd40848b0968d57e959414dc11f73849d42b0c24165'
+            'cfd0e84ecfd8a24ad7d31934f9ab53ffe6f1f459886918e82e88971159e84ea1')
 
 pkgver() {
   cd ModemManager
@@ -28,6 +32,7 @@ prepare() {
   # https://bugs.archlinux.org/task/74329
   chmod -x plugins/fibocom/77-mm-fibocom-port-types.rules \
            plugins/foxconn/mm-foxconn-t77w968-carrier-mapping.conf
+  patch -Np1 -i ../broadband-modem-qmi-enable-disable-messaging-AT-unso.patch
 }
 
 build() {
@@ -68,6 +73,7 @@ package_modemmanager() {
   _pick libmm usr/share/gir-1.0
   _pick libmm usr/share/gtk-doc/html/libmm-glib
   _pick libmm usr/share/vala
+  install -Dm644 "$srcdir/modemmanager.rules" usr/lib/udev/rules.d/01-org.freedesktop.ModemManager.rules
 }
 
 package_libmm-glib() {

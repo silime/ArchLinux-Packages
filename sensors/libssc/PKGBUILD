@@ -7,6 +7,7 @@ arch=("aarch64")
 license=("GPL-3.0-or-later")
 makedepends=("linux-headers" "libqmi" "glib2" "protobuf-c" "meson")
 provides=(liblibssc.so)
+depends=(protobuf-c)
 subpackages=("libssc-dbg" "libssc-dev")
 _commit=0eaa21abf2bab697233120e55a30fc923cb2e555
 source=("git+https://codeberg.org/DylanVanAssche/libssc.git#commit=$_commit"

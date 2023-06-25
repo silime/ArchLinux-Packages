@@ -1,0 +1,18 @@
+pkgname=oneplus-devices-udev
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="OnePlus fajita sensors Udev rules for controllers"
+arch=('any')
+license=('MIT')
+depends=('udev')
+source=("81-libssc-oneplus-fajita.rules"
+        "90-feedbackd-pmi8998.rules")
+sha256sums=('1fca2b33d91cc3021f59bac278190fd944993e2a4479ee1560d6003b3f0ce49f'
+            '897f2f5533644668b63e5fbff917e050af1cfb7472553c3ee520388c932ab6f9')
+
+package() {
+
+    # install udev rules
+    install -Dm644  "${srcdir}"/*.rules \
+        -t "${pkgdir}/usr/lib/udev/rules.d/"
+}

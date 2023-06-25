@@ -4,16 +4,16 @@ pkgver=0_git20210408
 _commit="a75518e1ddf44971b1181e12c328dd250b62962a"
 pkgrel=0
 pkgdesc="Enable q6voice audio when call is performed with oFono/ModemManager"
-url="https://github.com/msm8916-mainline/linux"
 arch=("aarch64")
 license=(MIT)
 makedepends=('tinyalsa-git' 'dbus' 'gcc')
+depends=('tinyalsa-git' 'dbus')
 source=("git+https://gitlab.com/postmarketOS/q6voiced.git#commit=${_commit}"
 	"q6voiced.conf"
     "q6voiced.service")
 
 sha256sums=('SKIP'
-       '236925d80bf8ac21f1082ce076fd7bc04f8600c74690457759c83592f0d13855'
+       '960805dca70f7173c6e8b86e14ccb4297c23924b9c593ecd9cf4c933785f4942'
        '1768793cfd6d4fed109e69c420c069e8583735d2ed30eb7a27f3215c4df72b1a')
 
 build() {

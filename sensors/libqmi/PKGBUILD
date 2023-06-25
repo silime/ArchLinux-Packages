@@ -47,11 +47,9 @@ prepare() {
 }
 
 build() {
-  arch-meson libqmi build
+  arch-meson libqmi build -D gtk_doc=true -Db_lto=true
   meson compile -C build
 }
-
-
 
 package() {
   meson install -C build --destdir "$pkgdir"
