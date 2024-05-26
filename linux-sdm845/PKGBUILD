@@ -88,7 +88,10 @@ build() {
   # Build the kernel and the modules
   unset LDFLAGS
   unset CFLAGS
-  make all modules dtbs
+  make ${MAKEFLAGS} Image  modules 
+  # Generate device tree blobs with symbols to support applying device tree overlays in U-Boot
+  make ${MAKEFLAGS} DTC_FLAGS="-@" dtbs
+
 
 }
 
@@ -115,6 +118,7 @@ _package() {
   mkdir -p "${pkgdir}"/{boot,usr/lib/modules}
   make INSTALL_MOD_PATH="${pkgdir}/usr" modules_install
   make INSTALL_DTBS_PATH="${pkgdir}/boot/dtbs" dtbs_install
+  make INSTALL_PATH="${pkgdir}/boot" install
   cp arch/$KARCH/boot/Image "${pkgdir}/boot"
 
   # make room for external modules
@@ -167,7 +171,7 @@ _package-headers() {
 
   install -Dt "${_builddir}/arch/${KARCH}" -m644 arch/${KARCH}/Makefile
   install -Dt "${_builddir}/arch/${KARCH}/kernel" -m644 arch/${KARCH}/kernel/asm-offsets.s
-  install -Dt "${_builddir}" -m644 vmlinuz 
+  install -Dt "${_builddir}" -m644 vmlinux 
 
   cp -t "${_builddir}/arch/${KARCH}" -a arch/${KARCH}/include
   mkdir -p "${_builddir}/arch/arm"
