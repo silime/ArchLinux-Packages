@@ -1,29 +1,28 @@
 pkgname=hexagonrpcd
-pkgver=0.1.0
+pkgver=0.3.0
 pkgrel=0
 pkgdesc="Qualcomm HexagonFS daemon"
 arch=('aarch64')
 license=(GPL-3.0-or-later)
-depends=(libmbim libqrtr-glib qrtr qmic)
-_commit=23b7681f3faad422fa5751886f901bf03775243d
+depends=(libmbim libqrtr-glib qrtr)
+_commit=b6efad6c3078bcd94b6ae76073ccb0c0242d3d91
 source=("git+https://gitlab.com/flamingradian/sensh.git#commit=$_commit"
-	"noshared.patch"
 	"10-fastrpc.rules"
 	"hexagonrpcd-adsp-rootpd.service"
 	"hexagonrpcd-adsp-sensorspd.service"
 	"hexagonrpcd-sdsp.service"
-	"hexagonrpcd.install")
+	"hexagonrpcd.install"
+	"hexagonrpcd.conf")
 sha256sums=('SKIP'
-            '4ea268fb8998ef9fc2af3a7793c7327828c4506f661b773d869d23aea44f189e'
             '41dfc4e8c4fd88f461a5a6e4a4e86849eb302f8bcb2b5ce2efa9690f5415d52d'
-            '1f1c6569570f2658c5deed7417b2aeb12ea69beab82c6e835d1e294195894819'
-            'daa72031644468a9c2ab2e0952eec25f01e07dce5d4d3ad8d53b1094148d128a'
-            'fce6f3a51d961078885ae0c7ffafc2d351297042c39918b06526ee50806d717a'
-            'a19ca1b11b34980d75557e454222538a7d082cf991e17c574f24a20112d45166')
+            '6b64a64a4bf1459e0d3c8576d536b4d3f9719e610e7039c288217ea71d401efc'
+            '9ee2ba932bd8956df271dcdf5a0813109cd590cee75e931bc0a6d7dad0a4ec21'
+	        '4ae8e0969a6cbcf3e31d8a8ad1436f29231f5dd6be85b2aa43144a8262ca2f98'
+            'a19ca1b11b34980d75557e454222538a7d082cf991e17c574f24a20112d45166'
+    	    '8a38d1c8bc47dac97be52d8dd239db28f36f8ddc9bd746bbecc5e671f9cfdee6')
 
 prepare() {
 	cd sensh/fastrpc
-	patch -Np1 -i "${srcdir}/noshared.patch"
 }
 
 build() {
@@ -34,10 +33,15 @@ package() {
   meson install -C build --destdir "${pkgdir}"
   install="${pkgname}.install"
   # Install service files
-  	install -Dm755 "${srcdir}/hexagonrpcd-adsp-rootpd.service" -t "${pkgdir}/usr/lib/systemd/system/"
-  	install -Dm755 "${srcdir}/hexagonrpcd-adsp-sensorspd.service" -t "${pkgdir}/usr/lib/systemd/system/"
-  	install -Dm755 "${srcdir}/hexagonrpcd-sdsp.service" -t "${pkgdir}/usr/lib/systemd/system/"
+  install -Dm644 "${srcdir}/hexagonrpcd-adsp-rootpd.service" "${pkgdir}/usr/lib/systemd/system/hexagonrpcd-adsp-rootpd.service"
+  install -Dm644 "${srcdir}/hexagonrpcd-adsp-sensorspd.service" "${pkgdir}/usr/lib/systemd/system/hexagonrpcd-adsp-sensorspd.service"
+  install -Dm644 "${srcdir}/hexagonrpcd-sdsp.service" "${pkgdir}/usr/lib/systemd/system/hexagonrpcd-sdsp.service"
 
-  	# Install rules file
-  	install -Dm644 "${srcdir}/10-fastrpc.rules" -t "${pkgdir}/usr/lib/udev/rules.d/"
+  # Install rules file
+  install -Dm644 "${srcdir}/10-fastrpc.rules" "${pkgdir}/usr/lib/udev/rules.d/10-fastrpc.rules"
+
+  # Install configuration file
+  install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+  install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-adsp-rootpd.conf"
+  install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf"
 }

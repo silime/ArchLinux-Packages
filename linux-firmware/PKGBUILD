@@ -15,8 +15,8 @@
 _pkgbase=linux-firmware
 pkgbase=${_pkgbase}-oneplus-sdm845
 pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom ${pkgbase}-sensors)
-_tag=20230515
-pkgver=20230515.5122909
+_tag=20240513
+pkgver=20240513.227453
 pkgrel=1
 pkgdesc="Firmware files for Linux"
 url="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=summary"
@@ -153,8 +153,6 @@ package_linux-firmware-oneplus-sdm845-sensors() {
     depends=('linux-firmware-oneplus-sdm845-whence')
     provides=('linux-firmware-sensors')
     conflicts=('linux-firmware-sensors')
-    cp -a "${srcdir}/firmware-oneplus-sdm845/var" "${pkgdir}"
-    cp -a "${srcdir}/firmware-oneplus-sdm845/etc" "${pkgdir}"
     cp -a "${srcdir}/firmware-oneplus-sdm845/usr" "${pkgdir}"
 }
 # vim:set sw=2 et:

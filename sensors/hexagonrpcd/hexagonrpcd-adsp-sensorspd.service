@@ -4,7 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp -s
+EnvironmentFile=/etc/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp -s  -R ${hexagonrpcd_fw_dir}
 User=fastrpc
 Group=fastrpc
 Restart=on-failure

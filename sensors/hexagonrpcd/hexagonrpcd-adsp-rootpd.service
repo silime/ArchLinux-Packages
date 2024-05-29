@@ -4,7 +4,8 @@ After=dbus.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp
+EnvironmentFile=/etc/hexagonrpcd/hexagonrpcd-adsp-rootpd.conf
+ExecStart=/usr/bin/hexagonrpcd -f /dev/fastrpc-adsp -R ${hexagonrpcd_fw_dir}
 User=fastrpc
 Group=fastrpc
 Restart=on-failure

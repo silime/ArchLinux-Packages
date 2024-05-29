@@ -5,7 +5,7 @@
 # Contributor: Pablo Lezeta <prflr88@gmail.com>
 
 pkgname=iio-sensor-proxy
-pkgver=3.4+r5+g48cb957
+pkgver=3.5+r17+gd377da3
 pkgrel=1
 pkgdesc='IIO accelerometer sensor to input device proxy'
 arch=('aarch64')
@@ -14,29 +14,15 @@ license=('GPL2')
 depends=('systemd' 'libgudev' 'gtk3' 'polkit' 'libssc')
 makedepends=('meson')
 checkdepends=('python-gobject' 'python-dbusmock' 'python-psutil' 'umockdev')
-_commit=48cb957c41b8d51d882219866e1366c45e21c352
+_commit=d377da3d9bc05454c130d3b617848c84b11cdd2a
 source=("git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy.git#commit=$_commit"
-        "iio-sensor-proxy.service"
-        "0001-iio-sensor-proxy-depend-on-libssc.patch"
-        "0002-proximity-support-SSC-proximity-sensor.patch"
-        "0003-light-support-SSC-light-sensor.patch"
-        "0004-accelerometer-support-SSC-accelerometer-sensor.patch"
-        "0005-compass-support-SSC-compass-sensor.patch"
-        "0006-accelerometer-apply-accel-attributes.patch"
-        "0007-data-add-libssc-udev-rules.patch")
+        "iio-sensor-proxy.service")
 pkgver() {
   cd iio-sensor-proxy
   git describe --tags | sed 's/-rc/rc/;s/[^-]*-g/r&/;s/-/+/g'
 }
 prepare() {
   cd iio-sensor-proxy
-  patch -Np1 -i ../0001-iio-sensor-proxy-depend-on-libssc.patch
-  patch -Np1 -i ../0002-proximity-support-SSC-proximity-sensor.patch
-  patch -Np1 -i ../0003-light-support-SSC-light-sensor.patch
-  patch -Np1 -i ../0004-accelerometer-support-SSC-accelerometer-sensor.patch
-  patch -Np1 -i ../0005-compass-support-SSC-compass-sensor.patch
-  patch -Np1 -i ../0006-accelerometer-apply-accel-attributes.patch
-  patch -Np1 -i ../0007-data-add-libssc-udev-rules.patch
 }
 
 build() {
