@@ -17,7 +17,7 @@ jobs:
       run: |
         # Install makepkg deps
         pacman --noconfirm -Syu
-        pacman --noconfirm -S sudo binutils fakeroot base-devel git
+        pacman --noconfirm -S sudo binutils fakeroot base-devel git rdfind 
 
     - name: Build Package
       run: |
