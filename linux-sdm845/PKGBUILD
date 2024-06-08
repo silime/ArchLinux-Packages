@@ -4,7 +4,7 @@
 # Contributor: Dragan Simic <dsimic@buserror.io>
 
 pkgbase=linux-sdm845
-pkgver=6.9.0
+pkgver=6.10.0
 pkgrel=1
 _newversion=false
 _stopbuild=false     # Will also stop if ${_newversion} is true
@@ -15,7 +15,7 @@ url="http://www.kernel.org/"
 license=('GPL2')
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 options=('!strip')
-_tag="sdm845-6.9.0"
+_tag="v6.10-rc2"
 _srcname="linux-${_tag}"
 
 source=("https://gitlab.com/sdm845-mainline/linux/-/archive/${_tag}/linux-${_tag}.tar.gz"
@@ -87,7 +87,7 @@ build() {
 
   # Build the kernel and the modules
   unset LDFLAGS
-  make ${MAKEFLAGS} all  modules -j9
+  make ${MAKEFLAGS} all $(nproc)
   # Generate device tree blobs with symbols to support applying device tree overlays in U-Boot
   make ${MAKEFLAGS} DTC_FLAGS="-@" dtbs
 
