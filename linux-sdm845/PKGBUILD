@@ -117,7 +117,8 @@ _package() {
   make INSTALL_MOD_PATH="${pkgdir}/usr" modules_install
   make INSTALL_DTBS_PATH="${pkgdir}/boot/dtbs" dtbs_install
   make INSTALL_PATH="${pkgdir}/boot" install
-
+  echo $(make -s image_name)
+  install -Dm644 "$(make -s image_name)" "${pkgdir}/boot/vmlinuz"
   # make room for external modules
   local _extramodules="extramodules-${_basekernel}${_kernelname}"
   ln -s "../${_extramodules}" "${pkgdir}/usr/lib/modules/${_kernver}/extramodules"
