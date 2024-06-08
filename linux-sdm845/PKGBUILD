@@ -87,7 +87,7 @@ build() {
 
   # Build the kernel and the modules
   unset LDFLAGS
-  make ${MAKEFLAGS} all $(nproc)
+  make ${MAKEFLAGS} all -j$(nproc)
   # Generate device tree blobs with symbols to support applying device tree overlays in U-Boot
   make ${MAKEFLAGS} DTC_FLAGS="-@" dtbs
 
