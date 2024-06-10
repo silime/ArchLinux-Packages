@@ -4,11 +4,11 @@
 
 pkgbase="linux-sdm845"
 pkgver="6.10"
-pkgrel="3"
+pkgrel="4"
 
 _pkgdesc="Kernel for sdm845 (development version)"
 
-arch=("aarch64")
+arch=('aarch64')
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 options=('!strip')
@@ -33,10 +33,11 @@ prepare() {
     echo "" > ".scmversion"                         # ignore uncommitted changes
     # ./scripts/setlocalversion --save-scmversion   # alternative: include git tag / dirty flag
     echo "-${pkgrel}" > "localversion.10-pkgrel"
-    echo "${pkgbase#linux}" > "localversion.20-pkgname"
+    # echo "${pkgbase#linux}" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    make ARCH=arm64 defconfig sdm845.config
+    cat "${srcdir}/config" > .config
+    
 }
 
 build() {
@@ -73,8 +74,8 @@ _package() {
 
     # systemd expects to find the kernel here to allow hibernation
     # https://github.com/systemd/systemd/commit/edda44605f06a41fb86b7ab8128dcf99161d2344
-    install -Dm644 "$(make -s image_name)" "${modulesdir}/vmlinuz"
-
+    # install -Dm644 "$(make -s image_name)" "${modulesdir}/vmlinuz"
+    install -Dm644 arch/arm64/boot/vmlinuz "${modulesdir}/vmlinuz"
     # Used by mkinitcpio to name the kernel
     echo "${pkgbase}" | install -Dm644 /dev/stdin "${modulesdir}/pkgbase"
 
@@ -87,6 +88,7 @@ _package() {
     msg2 "Installing dtbs..."
     make INSTALL_DTBS_PATH="${modulesdir}/dtb" dtbs_install
     # mkdir -p "${pkgdir}/boot/dtb" && cp -r "${modulesdir}/dtb" "${pkgdir}/boot/dtb/${pkgbase}"
+    mkdir -p "${pkgdir}/boot/dtbs" && cp -r ${modulesdir}/dtb/* "${pkgdir}/boot/dtbs/"
 
     msg2 "Installing mkinitcpio preset..."
 

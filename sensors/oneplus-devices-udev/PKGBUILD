@@ -6,13 +6,18 @@ arch=('any')
 license=('MIT')
 depends=('udev')
 source=("81-libssc-oneplus-fajita.rules"
-        "90-feedbackd-pmi8998.rules")
+        "90-feedbackd-pmi8998.rules"
+        "hexagonrpcd.conf")
 sha256sums=('1fca2b33d91cc3021f59bac278190fd944993e2a4479ee1560d6003b3f0ce49f'
-            '897f2f5533644668b63e5fbff917e050af1cfb7472553c3ee520388c932ab6f9')
+            '897f2f5533644668b63e5fbff917e050af1cfb7472553c3ee520388c932ab6f9'
+            'SKIP')
 
 package() {
 
     # install udev rules
     install -Dm644  "${srcdir}"/*.rules \
         -t "${pkgdir}/usr/lib/udev/rules.d/"
+    # install seneors config
+    install -Dm644 "${srcdir}"/*.config "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+
 }
