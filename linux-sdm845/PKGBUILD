@@ -36,8 +36,9 @@ prepare() {
     echo "" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    cat "${srcdir}/config" > .config
-    
+    # cat "${srcdir}/config" > .config
+    make ARCH=arm64 defconfig sdm845.config
+
 }
 
 build() {
