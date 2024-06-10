@@ -5,7 +5,7 @@
 
 pkgbase=linux-sdm845
 pkgver=6.10.0
-pkgrel=2
+pkgrel=3
 _newversion=false
 _stopbuild=false     # Will also stop if ${_newversion} is true
 _kernelname="${pkgbase#linux}"
