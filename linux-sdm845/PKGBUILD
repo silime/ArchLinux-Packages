@@ -3,8 +3,8 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="6.9"
-pkgrel="2"
+pkgver="6.9.0"
+pkgrel="3"
 
 _pkgdesc="Kernel for sdm845 (development version)"
 
@@ -36,8 +36,8 @@ prepare() {
     echo "" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    # cat "${srcdir}/config" > .config
-    make ARCH=arm64 defconfig sdm845.config
+    cat "${srcdir}/config" > .config
+    # make ARCH=arm64 defconfig sdm845.config
 
 }
 
