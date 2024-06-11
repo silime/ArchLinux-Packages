@@ -21,7 +21,6 @@ pkgver() {
 
 prepare() {
   cd libssc
-  git apply ${srcdir}/0001-fix-build.patch
 }
 
 build() {
