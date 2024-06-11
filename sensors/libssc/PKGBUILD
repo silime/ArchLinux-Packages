@@ -1,5 +1,5 @@
 pkgname=libssc
-pkgver=0.1.6+r12+ge198628
+pkgver=0.1.6
 pkgrel=1
 pkgdesc="Library to expose Qualcomm Sensor Core sensors"
 url="https://codeberg.org/DylanVanAssche/libssc"
