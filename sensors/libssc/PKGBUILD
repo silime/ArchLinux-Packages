@@ -1,20 +1,18 @@
 pkgname=libssc
-pkgver=0.1.4+r12+ge198628
+pkgver=0.1.6+r12+ge198628
 pkgrel=1
 pkgdesc="Library to expose Qualcomm Sensor Core sensors"
 url="https://codeberg.org/DylanVanAssche/libssc"
 arch=("aarch64")
 license=("GPL-3.0-or-later")
 makedepends=( "libqmi" "glib2" "protobuf-c" "meson")
-provides=(liblibssc.so)
+provides=(libssc.so)
 depends=(protobuf-c)
 subpackages=("libssc-dbg" "libssc-dev")
 _commit=e19862897d5aee5e6aac74f8fb536f507854e9af
-source=("git+https://codeberg.org/DylanVanAssche/libssc.git#commit=$_commit"
-        "0001-fix-build.patch")
+source=("git+https://codeberg.org/DylanVanAssche/libssc.git#commit=$_commit")
 
-sha256sums=('SKIP'
-            'eab93c191212904c299547cfa15ec93d6b1161685f239f18924cd6e18bea9a3e')
+sha256sums=('SKIP')
 
 pkgver() {
   cd libssc

@@ -1,5 +1,5 @@
 pkgname=oneplus-devices-udev
-pkgver=0.0.1
+pkgver=0.0.2
 pkgrel=1
 pkgdesc="OnePlus fajita sensors Udev rules for controllers"
 arch=('any')
@@ -18,6 +18,6 @@ package() {
     install -Dm644  "${srcdir}"/*.rules \
         -t "${pkgdir}/usr/lib/udev/rules.d/"
     # install seneors config
-    install -Dm644 "${srcdir}"/*.config "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+    # install -Dm644 "${srcdir}"/*.config "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
 
 }
