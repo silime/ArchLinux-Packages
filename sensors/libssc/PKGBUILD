@@ -9,7 +9,7 @@ makedepends=( "libqmi" "glib2" "protobuf-c" "meson")
 provides=(libssc.so)
 depends=(protobuf-c)
 subpackages=("libssc-dbg" "libssc-dev")
-_commit=e19862897d5aee5e6aac74f8fb536f507854e9af
+_commit=de7f29cc2c4858b553d69cab2e6a58d58197388d
 source=("git+https://codeberg.org/DylanVanAssche/libssc.git#commit=$_commit")
 
 sha256sums=('SKIP')
