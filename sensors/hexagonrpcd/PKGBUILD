@@ -26,7 +26,7 @@ prepare() {
 }
 
 build() {
-  arch-meson sensh/fastrpc build  -D b_lto=true
+  arch-meson sensh build  -D b_lto=true
   meson compile -C build
 }
 package() {
