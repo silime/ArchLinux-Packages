@@ -3,7 +3,7 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="6.9.0"
+pkgver="6.10.0"
 pkgrel="3"
 
 _pkgdesc="Kernel for sdm845 (development version)"
@@ -12,10 +12,10 @@ arch=('aarch64')
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 options=('!strip')
-_tag="sdm845-6.9.0-r2"
+_tag="sdm845-6.10.0-r2"
 _srcname="linux-${_tag}"
 
-source=("https://gitlab.com/sdm845-mainline/linux/-/archive/${_tag}/linux-${_tag}.tar.gz"
+source=("https://gitlab.com/sdm845-mainline/linux/-/archive/sdm845/6.10-dev/linux-sdm845-6.10-dev.tar.gz"
         'config'
         'linux.preset'
         '60-linux.hook'
@@ -36,8 +36,8 @@ prepare() {
     echo "" > "localversion.20-pkgname"
 
     msg2 "Configuring..."
-    cat "${srcdir}/config" > .config
-    # make ARCH=arm64 defconfig sdm845.config
+    # cat "${srcdir}/config" > .config
+    make ARCH=arm64 defconfig sdm845.config
 
 }
 
