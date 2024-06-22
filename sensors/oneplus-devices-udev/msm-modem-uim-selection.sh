@@ -43,7 +43,7 @@ fi
 QMI_CARDS=$($QMICLI_MODEM --uim-get-card-status)
 
 # Fail if all slots are empty but wait a bit for the sim to appear.
-count=0
+count=4
 while ! printf "%s" "$QMI_CARDS" | grep -Fq "Card state: 'present'"; do
   if [ "$count" -ge "$sim_wait_time" ]; then
     echo "No sim detected after $sim_wait_time seconds."

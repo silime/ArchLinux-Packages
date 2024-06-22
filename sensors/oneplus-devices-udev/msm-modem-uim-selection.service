@@ -6,7 +6,7 @@ Requires=ModemManager.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin//msm-modem-uim-selection.sh
+ExecStart=bash /usr/bin//msm-modem-uim-selection.sh
 RemainAfterExit=yes
 
 [Install]
