@@ -1,0 +1,13 @@
+# /etc/systemd/system/msm-modem-uim-selection.service
+[Unit]
+Description=MSM Modem UIM Selection
+Before=ModemManager.service
+Requires=ModemManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin//msm-modem-uim-selection.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,15 +1,17 @@
 pkgname=oneplus-devices-udev
 pkgver=0.0.2
 pkgrel=1
-pkgdesc="OnePlus fajita sensors Udev rules for controllers"
+pkgdesc="OnePlus fajita sensors udev rules for controllers"
 arch=('any')
 license=('MIT')
 depends=('udev')
 source=("81-libssc-oneplus-fajita.rules"
         "90-feedbackd-pmi8998.rules"
-        "hexagonrpcd.conf")
+        "hexagonrpcd.conf"
+        "msm-modem-uim-selection.service")
 sha256sums=('1fca2b33d91cc3021f59bac278190fd944993e2a4479ee1560d6003b3f0ce49f'
             '897f2f5533644668b63e5fbff917e050af1cfb7472553c3ee520388c932ab6f9'
+            'SKIP'
             'SKIP')
 
 package() {
@@ -18,6 +20,9 @@ package() {
     install -Dm644  "${srcdir}"/*.rules \
         -t "${pkgdir}/usr/lib/udev/rules.d/"
     # install seneors config
-    # install -Dm644 "${srcdir}"/*.config "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+    install -Dm0644 "${srcdir}"/hexagonrpcd.conf "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+    # modem config
+    install -Dm644 "$srcdir"/msm-modem-uim-selection.service "$pkgdir"/etc/systemd/system/msm-modem-uim-selection.service
+    install -Dm755 "$srcdir"/msm-modem-uim-selection.sh "$pkgdir"/usr/bin/msm-modem-uim-selection.sh
 
 }

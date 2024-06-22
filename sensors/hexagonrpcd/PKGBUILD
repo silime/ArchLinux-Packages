@@ -1,12 +1,12 @@
 pkgname=hexagonrpcd
-pkgver=0.3.0
+pkgver=0.3.2
 pkgrel=0
 pkgdesc="Qualcomm HexagonFS daemon"
 arch=('aarch64')
 license=(GPL-3.0-or-later)
 depends=(libmbim libqrtr-glib qrtr)
-_commit=b6efad6c3078bcd94b6ae76073ccb0c0242d3d91
-source=("git+https://gitlab.com/flamingradian/sensh.git#commit=$_commit"
+_commit=b7eff23db1b11541d11175bd3f42bd4c85214baf
+source=("git+https://gitlab.com/sdm670-mainline/hexagonrpc.git#commit=$_commit"
 	"10-fastrpc.rules"
 	"hexagonrpcd-adsp-rootpd.service"
 	"hexagonrpcd-adsp-sensorspd.service"
@@ -22,11 +22,13 @@ sha256sums=('SKIP'
     	    '8a38d1c8bc47dac97be52d8dd239db28f36f8ddc9bd746bbecc5e671f9cfdee6')
 
 prepare() {
-	cd sensh/fastrpc
+  cd hexagonrpc
+  git describe --tags | sed 's/-rc/rc/;s/[^-]*-g/r&/;s/-/+/g'
+
 }
 
 build() {
-  arch-meson sensh build  -D b_lto=true
+  arch-meson hexagonrpc build  -D b_lto=true
   meson compile -C build
 }
 package() {
@@ -41,7 +43,7 @@ package() {
   install -Dm644 "${srcdir}/10-fastrpc.rules" "${pkgdir}/usr/lib/udev/rules.d/10-fastrpc.rules"
 
   # Install configuration file
-  install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
+  #install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
   install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-adsp-rootpd.conf"
   install -Dm644 "$srcdir/$pkgname.conf" "$pkgdir/etc/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf"
 }
