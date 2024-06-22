@@ -15,31 +15,14 @@ sha256sums=('SKIP' 'SKIP' 'SKIP')
 package() {
     cd "$srcdir"
 
-    # Main package files
-    # install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.sh \
-    #     "$pkgdir"/usr/bin/call_audio_idle_suspend_workaround
-
-    # install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.conf \
-    #     "$pkgdir"/etc/call_audio_idle_suspend_workaround.conf
-
-    # install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.service \
-    #     "$pkgdir"/usr/lib/systemd/system/call_audio_idle_suspend_workaround.service
-}
-
-pulseaudio() {
-    pkgdesc="Pulseaudio support for Qualcomm SDM845"
-    install_if="$pkgname=$pkgver-r$pkgrel pulseaudio"
-    replaces="$pkgname" # To migrate from workaround being in main package
-    install="$subpkgname.post-install $subpkgname.post-upgrade"
-
-    # Call Audio idle suspend workaround code
+    Main package files
     install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.sh \
-        "$subpkgdir"/usr/bin/call_audio_idle_suspend_workaround
+        "$pkgdir"/usr/bin/call_audio_idle_suspend_workaround
 
-    # Call Audio idle suspend workaround init script
-    install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.conf \
-        "$subpkgdir"/etc/call_audio_idle_suspend_workaround.conf
+    install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.conf \
+        "$pkgdir"/etc/call_audio_idle_suspend_workaround.conf
 
     install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.service \
-        "$subpkgdir"/usr/lib/systemd/system/call_audio_idle_suspend_workaround.service
+        "$pkgdir"/usr/lib/systemd/system/call_audio_idle_suspend_workaround.service
 }
+
