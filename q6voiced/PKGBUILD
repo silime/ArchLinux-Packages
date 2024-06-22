@@ -1,7 +1,7 @@
 # Maintainer: Chalkin <chalkin@yeah.net>
 pkgname=q6voiced
-pkgver=0_git20210408
-_commit="a75518e1ddf44971b1181e12c328dd250b62962a"
+pkgver=0_git20240608
+_commit="75ae4079fc40c1c555ce9129ee86780bf598aaf6"
 pkgrel=0
 pkgdesc="Enable q6voice audio when call is performed with oFono/ModemManager"
 arch=("aarch64")
