@@ -1,0 +1,18 @@
+# Maintainer: Chalkin <chalkin@yeah.net>
+pkgname=bootmac
+pkgver=0.5.0
+pkgrel=0
+_commit="75ae4079fc40c1c555ce9129ee86780bf598aaf6"
+pkgrel=0
+pkgdesc="Configure MAC addresses at boot"
+arch=("aarch64")
+license=("GPLv3-or-later")
+depends=('bluez-deprecated-tools' 'dbus')
+source=("https://gitlab.com/postmarketOS/bootmac/-/archive/v$pkgver/bootmac-v$pkgver.tar.gz")
+
+sha256sums=('SKIP')
+
+package() {
+	install -Dm755 "$srcdir"/bootmac-v0.5.0/bootmac "$pkgdir"/usr/bin/bootmac
+	install -Dm644 "$srcdir"/bootmac-v0.5.0/bootmac.rules "$pkgdir"/usr/lib/udev/rules.d/90-bootmac.rules
+}
