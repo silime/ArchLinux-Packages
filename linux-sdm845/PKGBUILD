@@ -12,7 +12,7 @@ arch=('aarch64')
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 options=('!strip')
-_tag="sdm845-6.10.0-dev"
+_tag="sdm845-6.10-dev"
 _srcname="linux-${_tag}"
 
 source=("https://gitlab.com/sdm845-mainline/linux/-/archive/sdm845/6.10-dev/linux-sdm845-6.10-dev.tar.gz"
