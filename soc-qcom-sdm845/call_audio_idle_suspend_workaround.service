@@ -9,7 +9,7 @@ PIDFile=/run/call_audio_idle_suspend_workaround.pid
 ExecStart=/usr/bin/call_audio_idle_suspend_workaround
 Restart=on-failure
 RestartSec=1
-EnvironmentFile=/etc/default/call_audio_idle_suspend_workaround.conf
+EnvironmentFile=/etc/call_audio_idle_suspend_workaround.conf
 
 [Install]
 WantedBy=multi-user.target
