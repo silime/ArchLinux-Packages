@@ -15,7 +15,7 @@ sha256sums=('SKIP' 'SKIP' 'SKIP')
 package() {
     cd "$srcdir"
 
-    Main package files
+    # Main package files
     install -Dm755 "$srcdir"/call_audio_idle_suspend_workaround.sh \
         "$pkgdir"/usr/bin/call_audio_idle_suspend_workaround
 
