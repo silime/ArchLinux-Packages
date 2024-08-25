@@ -1,0 +1,12 @@
+post_install(){
+    systemctl enable msm-modem-uim-selection.service
+    systemctl enable call_audio_idle_suspend_workaround.service
+    systemctl start msm-modem-uim-selection.service
+    systemctl start call_audio_idle_suspend_workaround.service
+}
+pre_remove() {
+    systemctl stop msm-modem-uim-selection.service
+    systemctl stop call_audio_idle_suspend_workaround.service
+    systemctl disable msm-modem-uim-selection.service
+    systemctl disable call_audio_idle_suspend_workaround.service
+}

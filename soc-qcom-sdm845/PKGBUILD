@@ -1,16 +1,17 @@
-# Maintainer: Your Name <your.email@example.com>
+# Maintainer: chalkin <chalkin@yeah.net>
 pkgname=soc-qcom-sdm845
 pkgver=1.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Qualcomm SDM845 SoC support package"
-arch=('any')
-url="https://example.com"
+arch=('aarch64')
 license=('BSD-3-Clause')
 depends=('pulseaudio' 'dbus')
 source=("call_audio_idle_suspend_workaround.sh"
         "call_audio_idle_suspend_workaround.conf"
-        "call_audio_idle_suspend_workaround.service")
-sha256sums=('SKIP' 'SKIP' 'SKIP')
+        "call_audio_idle_suspend_workaround.service"
+        "msm-modem-uim-selection.service"
+        "msm-modem-uim-selection.sh")
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP' 'SKIP')
 
 package() {
     cd "$srcdir"
@@ -24,5 +25,12 @@ package() {
 
     install -Dm644 "$srcdir"/call_audio_idle_suspend_workaround.service \
         "$pkgdir"/usr/lib/systemd/system/call_audio_idle_suspend_workaround.service
+
+    # modem config
+    install -Dm644 "$srcdir"/msm-modem-uim-selection.service \
+        "$pkgdir"/usr/lib/systemd/system/msm-modem-uim-selection.service
+    install -Dm755 "$srcdir"/msm-modem-uim-selection.sh \
+        "$pkgdir"/usr/bin/msm-modem-uim-selection.sh
+
 }
 
