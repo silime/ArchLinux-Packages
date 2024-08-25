@@ -15,8 +15,8 @@
 _pkgbase=linux-firmware
 pkgbase=${_pkgbase}-oneplus-sdm845
 pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom ${pkgbase}-sensors)
-_tag=20240513
-pkgver=20240513.227453
+_tag=20240811
+pkgver=20240809.59460076
 pkgrel=1
 pkgdesc="Firmware files for Linux"
 url="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=summary"
@@ -49,7 +49,6 @@ prepare() {
   msg2 "Adding/patching firmware for sdm845 devices"
   cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/postmarketos/." .
   cp -a "${srcdir}/firmware-oneplus-sdm845/lib/firmware/." .
-  cp -a "../../tfa98xx.cnt" .
   # update WHENCE
   echo "" >> WHENCE
   echo "---------------------------------------------------------------------------" >> WHENCE
@@ -109,8 +108,8 @@ package_linux-firmware-oneplus-sdm845() {
 
   cd ${_pkgbase}
 
-  make DESTDIR="${pkgdir}" FIRMWAREDIR=/usr/lib/firmware install
-
+  mkdir -p ${pkgdir}/usr/lib/firmware/
+cp -r {ath10k,qcom,qca,tfa98xx.cnt} ${pkgdir}/usr/lib/firmware/
   # Trigger a microcode reload for configurations not using early updates
   echo 'w /sys/devices/system/cpu/microcode/reload - - - - 1' |
     install -Dm644 /dev/stdin "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}.conf"
@@ -120,24 +119,9 @@ package_linux-firmware-oneplus-sdm845() {
   # split
   cd "${pkgdir}"
 
-  _pick linux-firmware-nfp usr/lib/firmware/netronome
-  _pick linux-firmware-nfp usr/share/licenses/${pkgname}/LICENCE.Netronome
-
-  _pick linux-firmware-mellanox usr/lib/firmware/mellanox
-
-  _pick linux-firmware-marvell usr/lib/firmware/{libertas,mwl8k,mwlwifi,mrvl}
-  _pick linux-firmware-marvell usr/share/licenses/${pkgname}/LICENCE.{Marvell,NXP}
-
-  _pick linux-firmware-qcom usr/lib/firmware/{qcom,a300_*}
+  _pick linux-firmware-qcom usr/lib/firmware/qcom
   _pick linux-firmware-qcom usr/share/licenses/${pkgname}/LICENSE.qcom
 
-  _pick linux-firmware-liquidio usr/lib/firmware/liquidio
-  _pick linux-firmware-liquidio usr/share/licenses/${pkgname}/LICENCE.cavium_liquidio
-
-  _pick linux-firmware-qlogic usr/lib/firmware/{qlogic,qed,ql2???_*,c{b,t,t2}fw-*}
-  _pick linux-firmware-qlogic usr/share/licenses/${pkgname}/LICENCE.{qla1280,qla2xxx}
-
-  _pick linux-firmware-bnx2x usr/lib/firmware/bnx2x*
 }
 
 package_linux-firmware-oneplus-sdm845-qcom() {
