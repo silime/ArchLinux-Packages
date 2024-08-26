@@ -32,13 +32,18 @@ jobs:
         export COMPRESSZST=(zstd -c -T0 --ultra -20 -)
         export MAKEFLAGS="-j2"
 
-        # Build
+        # Build linux-firmware
+        su nobody --pty -p -s /bin/bash -c 'makepkg -f --syncdeps --skippgpcheck --noconfirm'
+
+        # Build linux-firmware-lenovo-sm8250
+        cd ../linux-firmware-lenovo-sm8250
         su nobody --pty -p -s /bin/bash -c 'makepkg -f --syncdeps --skippgpcheck --noconfirm'
 
     - name: Prepare release
       run: |
         mkdir release
         mv linux-firmware/*.pkg.tar.zst release
+        mv linux-firmware-lenovo-sm8250/*.pkg.tar.zst release
 
     - name: Upload artifacts
       uses: actions/upload-artifact@v1

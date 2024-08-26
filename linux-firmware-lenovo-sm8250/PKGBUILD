@@ -1,0 +1,147 @@
+# Maintainer: Maximilian Luz <luzmaximilian@gmail.com>
+#
+# Based on original Arch Linux linux-firmware PKGBUILD
+#
+# Note:
+#   This package requires external firmware files. You can use the `getfw.py`
+#   script at https://github.com/linux-surface/aarch64-firmware to obtain those
+#   from a Windows recovery image or a Windows partition. The path to the
+#   created firmware directory needs to be passed in the SPX_FIRMWARE_ROOT
+#   environment variable.
+#
+# Usage:
+#   env SPX_FIRMWARE_ROOT="../path/to/firmware/" makepkg
+
+_pkgbase=linux-firmware
+pkgbase=${_pkgbase}-lenovo-sm8250
+pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom ${pkgbase}-sensors)
+_tag=20240811
+pkgver=20240823.1be7345
+pkgrel=1
+pkgdesc="Firmware files for Linux"
+url="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=summary"
+license=('GPL2' 'GPL3' 'custom')
+_commit="1be73450f1aaa6896c59fc1768a4fc98abe7cbda"
+arch=('any')
+makedepends=('git')
+options=(!strip)
+
+source=(
+  "git+https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git#tag=${_tag}"
+  "git+https://github.com/silime/lenovo-sm8250-q706f-firmware.git#commit=${_commit}"
+)
+sha256sums=('SKIP'
+            'SKIP')
+
+_backports=(
+)
+
+prepare() {
+  cd ${_pkgbase}
+
+  msg2 "Applying distro patches"
+
+  local _c
+  for _c in "${_backports[@]}"; do
+    git log --oneline -1 "${_c}"
+    git cherry-pick -n "${_c}"
+  done
+
+  msg2 "Adding/patching firmware for lenovo sm8250 devices"
+  cp -a "${srcdir}/lenovo-sm8250-q706f-firmware/." .
+  # update WHENCE
+  echo "" >> WHENCE
+  echo "---------------------------------------------------------------------------" >> WHENCE
+  echo "" >> WHENCE
+  echo "Driver: lenovo sm8250 devices firmware" >> WHENCE
+  echo "" >> WHENCE
+  for file in $(git ls-files --others --exclude-standard); do
+    # ignore already compressed files
+    if [[ $file == *.xz ]]; then
+      continue
+    fi
+
+    # handle links properly
+    if test -L "${file}"; then
+      dir=$(dirname "${file}")
+      target=$(readlink -f "${file}")
+      target=$(realpath --relative-to="${dir}" "${target}")
+      echo "Link: ${file} -> ${target}" >> WHENCE
+    else
+      echo "File: ${file}" >> WHENCE
+    fi
+  done
+  echo "Version: 1.0.0" >> WHENCE
+  echo "" >> WHENCE
+  echo "Licence: Proprietary" >> WHENCE
+}
+
+pkgver() {
+  cd ${_pkgbase}
+
+  # Commit date + short rev
+  echo $(TZ=UTC git show -s --pretty=%cd --date=format-local:%Y%m%d HEAD).$(git rev-parse --short HEAD)
+}
+
+_pick() {
+  local p="$1" f d; shift
+  for f; do
+    d="$srcdir/$p/${f#$pkgdir/}"
+    mkdir -p "$(dirname "$d")"
+    mv "$f" "$d"
+    rmdir -p --ignore-fail-on-non-empty "$(dirname "$f")"
+  done
+}
+
+package_linux-firmware-lenovo-sm8250-whence() {
+  pkgdesc+=" - contains the WHENCE license file which documents the vendor license details"
+  provides=('linux-firmware-whence')
+  conflicts=('linux-firmware-whence')
+
+  install -Dt "${pkgdir}/usr/share/licenses/${pkgname}" -m644 ${_pkgbase}/WHENCE
+}
+
+package_linux-firmware-lenovo-sm8250() {
+  depends=('linux-firmware-lenovo-sm8250-whence')
+  provides=('linux-firmware')
+  conflicts=('linux-firmware')
+
+  cd ${_pkgbase}
+
+  mkdir -p ${pkgdir}/usr/lib/firmware/
+  cp -r {ath11k,qcom,qca,cirrus,hexagonfs} ${pkgdir}/usr/lib/firmware/
+  cp -r sm8250 ${pkgdir}/usr/lib/firmware/qcom/
+  # Trigger a microcode reload for configurations not using early updates
+  echo 'w /sys/devices/system/cpu/microcode/reload - - - - 1' |
+    install -Dm644 /dev/stdin "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}.conf"
+
+  install -Dt "${pkgdir}/usr/share/licenses/${pkgname}" -m644 LICEN*
+
+  # split
+  cd "${pkgdir}"
+
+  _pick linux-firmware-qcom usr/lib/firmware/qcom
+  _pick linux-firmware-qcom usr/share/licenses/${pkgname}/LICENSE.qcom
+
+  _pick linux-firmware-sensors usr/lib/firmware/hexagonfs/{acdb,dsp,sensors,socinfo}
+
+}
+
+package_linux-firmware-lenovo-sm8250-qcom() {
+  pkgdesc+=" - qcom / Firmware for Qualcomm SoCs"
+  depends=('linux-firmware-lenovo-sm8250-whence')
+  provides=('linux-firmware-qcom')
+  conflicts=('linux-firmware-qcom')
+
+  mv -v linux-firmware-qcom/* "${pkgdir}"
+}
+package_linux-firmware-lenovo-sm8250-sensors() {
+    pkgdesc+=" - sensors / Firmware for sensors"
+    depends=('linux-firmware-lenovo-sm8250-whence')
+    provides=('linux-firmware-sensors')
+    conflicts=('linux-firmware-sensors')
+    mkdir -p "${pkgdir}/usr/share/qcom/sm8250/Lenovo/q706f/"
+    ls "${srcdir}/linux-firmware-sensors/"
+    cp -a linux-firmware-sensors/usr/lib/firmware/hexagonfs/. "${pkgdir}/usr/share/qcom/sm8250/Lenovo/q706f/"
+}
+# vim:set sw=2 et:
