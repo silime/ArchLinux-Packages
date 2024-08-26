@@ -1,0 +1,78 @@
+
+name: Build kernel arch packages
+on:
+  push:
+    tags:
+      - 'linux-sm8250*'
+env:
+  GPG_KEY_ID: 56C464BAAC421453
+
+jobs:
+  build:
+    name: Build Linux kernel package
+    runs-on: ubuntu-latest
+    container: archlinux
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install build dependencies
+      run: |
+        # Install makepkg deps
+        pacman --noconfirm -Syu
+        pacman --noconfirm -S sudo binutils fakeroot base-devel git   \
+                              xmlto docbook-xsl kmod inetutils bc dtc \
+                              aarch64-linux-gnu-gcc aarch64-linux-gnu-glibc
+        # Fix permissions (can't makepkg as root)
+        echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
+    - name: Set up makepkg-aarch64 for cross-compilation
+      run: |
+        cd makepkg-aarch64
+        # Fix permissions (can't makepkg as root)
+        chown -R nobody .
+        # Build and install 
+        su nobody --pty -p -s /bin/bash -c 'makepkg -fi --syncdeps --skippgpcheck --noconfirm'
+    - name: Build Package
+      run: |
+        cd linux-sm8250
+        git config --global user.email "chalkinbot@users.noreply.github.com"
+        git config --global user.name "chalkinbot"
+        # Fix permissions (can't makepkg as root)
+        chown -R nobody .
+        # Package compression settings (Matches latest Arch)
+        export PKGEXT='.pkg.tar.zst'
+        export COMPRESSZST=(zstd -c -T0 --ultra -20 -)
+        export MAKEFLAGS="-j9"
+        # Build
+        su nobody --pty -p -s /bin/bash -c 'makepkg-aarch64 -f --syncdeps --skippgpcheck --noconfirm'
+    - name: Prepare release
+      run: |
+        mkdir release
+        mv linux-sm8250/*.pkg.tar.zst release
+ 
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: linux-sm8250-aarch64-latest
+        path: release
+  
+  release:
+    name: Publish release
+    needs: [build]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v1
+      with:
+        name: linux-sm8250-aarch64-latest
+
+    - name: Upload assets
+      uses: svenstaro/upload-release-action@v1-release
+      with:
+        repo_token: ${{ secrets.BUILD_TOKEN }}
+        file: ./*-latest/*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
