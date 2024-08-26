@@ -37,6 +37,7 @@ jobs:
 
         # Build linux-firmware-lenovo-sm8250
         cd ../linux-firmware-lenovo-sm8250
+        chown -R nobody .
         su nobody --pty -p -s /bin/bash -c 'makepkg -f --syncdeps --skippgpcheck --noconfirm'
 
     - name: Prepare release
