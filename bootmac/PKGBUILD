@@ -1,18 +1,17 @@
 # Maintainer: Chalkin <chalkin@yeah.net>
 pkgname=bootmac
 pkgver=0.5.0
-pkgrel=0
-_commit="75ae4079fc40c1c555ce9129ee86780bf598aaf6"
-pkgrel=0
+pkgrel=1
+_commit="3bfb183fc5062a5c202c0a356d615605d032078a"
 pkgdesc="Configure MAC addresses at boot"
 arch=("aarch64")
 license=("GPLv3-or-later")
 depends=('bluez-deprecated-tools' 'dbus')
-source=("https://gitlab.com/postmarketOS/bootmac/-/archive/v$pkgver/bootmac-v$pkgver.tar.gz")
+source=("git+https://gitlab.com/postmarketOS/bootmac.git#commit=${_commit}")
 
 sha256sums=('SKIP')
 
 package() {
-	install -Dm755 "$srcdir"/bootmac-v0.5.0/bootmac "$pkgdir"/usr/bin/bootmac
-	install -Dm644 "$srcdir"/bootmac-v0.5.0/bootmac.rules "$pkgdir"/usr/lib/udev/rules.d/90-bootmac.rules
+	install -Dm755 "$srcdir"/bootmac/bootmac "$pkgdir"/usr/bin/bootmac
+	install -Dm644 "$srcdir"/bootmac/bootmac.rules "$pkgdir"/usr/lib/udev/rules.d/90-bootmac.rules
 }
