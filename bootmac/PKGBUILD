@@ -1,12 +1,12 @@
 # Maintainer: Chalkin <chalkin@yeah.net>
 pkgname=bootmac
 pkgver=0.5.0
-pkgrel=1
+pkgrel=2
 _commit="3bfb183fc5062a5c202c0a356d615605d032078a"
 pkgdesc="Configure MAC addresses at boot"
 arch=("aarch64")
 license=("GPLv3-or-later")
-depends=('bluez-deprecated-tools' 'dbus' ' bluez-utils ')
+depends=('bluez-deprecated-tools' 'dbus' 'bluez-utils')
 source=("git+https://gitlab.com/postmarketOS/bootmac.git#commit=${_commit}")
 
 sha256sums=('SKIP')
