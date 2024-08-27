@@ -5,24 +5,26 @@
 # Contributor: Pablo Lezeta <prflr88@gmail.com>
 
 pkgname=iio-sensor-proxy
-pkgver=3.5+r18+gc70950f
+pkgver=3.5+r19+g9402fa7
 pkgrel=1
 pkgdesc='IIO accelerometer sensor to input device proxy'
 arch=('aarch64')
 url='https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/'
 license=('GPL2')
 depends=('systemd' 'libgudev' 'gtk3' 'polkit' 'libssc')
-makedepends=('meson')
+makedepends=('meson' 'libssc')
 checkdepends=('python-gobject' 'python-dbusmock' 'python-psutil' 'umockdev')
 _commit=c70950f1e33aba5c58c337e8dfb73d40efed5b5d
 source=("git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy.git#commit=$_commit"
-        "iio-sensor-proxy.service")
+        "iio-sensor-proxy.service"
+        "0001-fix-biuild.patch")
 pkgver() {
   cd iio-sensor-proxy
   git describe --tags | sed 's/-rc/rc/;s/[^-]*-g/r&/;s/-/+/g'
 }
 prepare() {
   cd iio-sensor-proxy
+  git  am  "$srcdir"/0001-fix-biuild.patch
 }
 
 build() {
@@ -48,4 +50,5 @@ cleanup() {
 }
 trap cleanup EXIT
 sha256sums=('SKIP'
-            'a79d4853b60d2ddf928cc31cd33527a5a99228ed3fe0470df4f63f4519eecf2b')
+            '8bbf420c74f84a7395d4f2eca17bf59f21049cbbe95e6c1514e53bdb30aae4a5'
+            '35ad12b2ac60de7fcfdd79547c21cbbc767a0c32e1035e27ae775284975bd9e9')
