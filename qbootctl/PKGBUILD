@@ -1,0 +1,37 @@
+
+# Maintainer: rodriguezst <git@rodriguezst.es>
+# Maintainer: chalkin <chalkin@yeah.net>
+
+pkgname="qbootctl"
+pkgdesc="Tool for interacting with Android A/B slots"
+pkgver=0.2.0
+pkgrel=1
+arch=("aarch64")
+url="https://github.com/rodriguezst/qbootctl"
+license=("GPL3")
+depends=("glibc" "zlib" "gcc-libs")
+makedepends=("git" "meson" "gcc")
+_commit="b8d22489141b2904dd1ab3d18912876b6dbe8284"
+source=("git+https://github.com/linux-msm/qbootctl.git#commit=$_commit"
+		"qbootctl.service"
+        "qbootctl.install")
+sha256sums=("SKIP"
+			"f6c4c90a8d41dc1436ae3c1ab7e7b0b6f9e4a8953a2f38831e8f6bbf8ad3ec01"
+            "a7af669c24972a088a8808e9d33992abbaeb705b6d92f300764b3909b75c8040")
+
+pkgver() {
+	cd "$pkgname"
+	git describe --tags | sed 's/-rc/rc/;s/[^-]*-g/r&/;s/-/+/g'
+}
+
+build() {
+	arch-meson "$pkgname" build
+	meson compile -C build
+}
+
+package() {
+	meson install -C build --destdir "$pkgdir"
+    install="${pkgname}.install"
+	install -Dm644 "$pkgname/LICENSE" "$pkgdir"/usr/share/licenses/$pkgname/LICENSE
+	install -Dm644 qbootctl.service "$pkgdir"/usr/lib/systemd/system/qbootctl.service
+}
