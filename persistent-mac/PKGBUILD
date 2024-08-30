@@ -1,0 +1,50 @@
+# Maintainer: Chalkin <chalkin@yeah.net>
+pkgname=persistent-mac
+pkgver=0.1
+pkgrel=1
+_commit="3bfb183fc5062a5c202c0a356d615605d032078a"
+pkgdesc="Configure MAC addresses at boot"
+arch=("aarch64")
+license=("GPL")
+depends=('bluez')
+source=("bt-update-mac.service"
+		"bt-update-mac.sh"
+		"generate-mac.sh"
+		"net-update-mac@.service"
+		"net-update-mac.sh"
+		"wait-addresses@.service"
+		"wait-addresses.sh"
+		"wait-interface@.service"
+		"wait-interface.sh"
+		"wait-reached@.service"
+		"wait-reached.sh"
+		"persistent-mac.install")
+
+sha256sums=('1536dd2f8d7466885f7c5b11e5f98a06cae2b5b3cb23e57b29b1032c4a3d0329'
+			'5e0999b8290fff18d108e90a2c9cabf3753ca6f551682fb26bddba1693d73d79'
+			'01095bd618948108c192ae91e3c503fd3ac259889d5ec43affbf88ee91703a91'
+			'985d814eb3d4686cd625adb542fd568a5a11ac65e2c1c66c0184031aa45653a5'
+			'b594f62c595138211543925944c82f36490ae0883cff49ddc16a30f6e499ca2e'
+			'ecc82dc7576227008c424f6c1ae37fbfdcf1c116ff4e81f188c5440281ff5729'
+			'2ba907e2547b1a2098d87fb798c6078f06c275e4da719ed232172a8b8fb651f3'
+			'0b6423c74fe1e62119a52f0eec23708086e7c67f8d7a2b259e54423be6d756c1'
+			'09921e18e444b615592cf2e609dc2d5e7c996c2e448dc413424736e5e573e6ff'
+			'e59bfdc381de83b9bf1e2491c7c05d330e673333813100a16af8dd3124444bfe'
+			'01595944d715a2cd7d5bed7ac5cd894d688309ebb2ff28ecdf40c3873e99bded'
+			'fc7e922f3e2914d1f1c0c9a26642cce2dc74db344721fdf0dccacfcb6864411c')
+
+package() {
+	cd "$srcdir"
+    install="${pkgname}.install"
+	install -Dm755 "$srcdir"/bt-update-mac.sh "$pkgdir"/etc/systemd/scripts/bt-update-mac.sh
+	install -Dm755 "$srcdir"/generate-mac.sh "$pkgdir"/etc/systemd/scripts/generate-mac.sh
+	install -Dm755 "$srcdir"/net-update-mac.sh "$pkgdir"/etc/systemd/scripts/net-update-mac.sh
+	install -Dm755 "$srcdir"/wait-addresses.sh "$pkgdir"/etc/systemd/scripts/wait-addresses.sh
+	install -Dm755 "$srcdir"/wait-interface.sh "$pkgdir"/etc/systemd/scripts/wait-interface.sh
+	install -Dm755 "$srcdir"/wait-reached.sh "$pkgdir"/etc/systemd/scripts/wait-reached.sh
+	install -Dm644 "$srcdir"/bt-update-mac.service "$pkgdir"/etc/systemd/system/bt-update-mac.service
+	install -Dm644 "$srcdir"/net-update-mac@.service "$pkgdir"/etc/systemd/system/net-update-mac@.service
+	install -Dm644 "$srcdir"/wait-addresses@.service "$pkgdir"/etc/systemd/system/wait-addresses@.service
+	install -Dm644 "$srcdir"/wait-interface@.service "$pkgdir"/etc/systemd/system/wait-interface@.service
+	install -Dm644 "$srcdir"/wait-reached@.service "$pkgdir"/etc/systemd/system/wait-reached@.service
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Update Persistent MAC Address for %i
+Before=network.target
+After=wait-interface@%i.service systemd-machine-id-commit.service
+Wants=wait-interface@%i.service
+[Service]
+Type=oneshot
+ExecStart=bash /etc/systemd/scripts/net-update-mac.sh %i
+SyslogIdentifier=wlan-update-mac
+[Install]
+WantedBy=sysinit.target

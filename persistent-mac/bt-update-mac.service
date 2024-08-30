@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Bluetooth Persistent MAC Address
+After=bluetooth.service systemd-machine-id-commit.service
+Wants=bluetooth.service
+[Service]
+Type=oneshot
+ExecStart=bash /etc/systemd/scripts/bt-update-mac.sh
+SyslogIdentifier=bt-update-mac
+[Install]
+WantedBy=bluetooth.target

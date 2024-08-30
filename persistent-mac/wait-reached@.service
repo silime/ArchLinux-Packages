@@ -1,0 +1,9 @@
+[Unit]
+Description=Wait for reached %i
+After=network-online.target
+[Service]
+Type=oneshot
+ExecStart=bash /etc/systemd/scripts/wait-reached.sh %i 60
+SyslogIdentifier=wait-reached
+[Install]
+WantedBy=network-online.target

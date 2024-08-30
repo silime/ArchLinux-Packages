@@ -1,0 +1,8 @@
+[Unit]
+Description=Wait for interface %i
+[Service]
+Type=oneshot
+ExecStart=bash /etc/systemd/scripts/wait-interface.sh %i 60
+SyslogIdentifier=wait-interface
+[Install]
+WantedBy=network-online.target

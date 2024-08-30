@@ -1,0 +1,8 @@
+post_install(){
+    systemctl enable bt-update-mac.service
+    systemctl enable net-update-mac@wlp1s0.service
+}
+pre_remove() {
+    systemctl disable bt-update-mac.service
+    systemctl disable net-update-mac@wlp1s0.service
+}
