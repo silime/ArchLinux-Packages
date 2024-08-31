@@ -1,0 +1,25 @@
+From d1f078171d783962c2772314a0f170cc1414a79f Mon Sep 17 00:00:00 2001
+From: Your Name <you@example.com>
+Date: Wed, 28 Aug 2024 03:54:51 +0800
+Subject: [PATCH] fix  biuild
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index fe97a27..7f30050 100644
+--- a/meson.build
++++ b/meson.build
+@@ -47,7 +47,7 @@ gudev_dep = dependency('gudev-1.0', version: '>= 237')
+ polkit_gobject_dep = dependency('polkit-gobject-1', version: '>= 0.91')
+ polkit_policy_directory = polkit_gobject_dep.get_pkgconfig_variable('policydir')
+ if get_option('ssc-support')
+-  libssc_dep = dependency('libssc-glib')
++  libssc_dep = dependency('libssc')
+ endif
+ 
+ xmllint = find_program('xmllint', required: false)
+-- 
+2.44.0
+
