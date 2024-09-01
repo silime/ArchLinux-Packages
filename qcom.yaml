@@ -1,0 +1,76 @@
+# Format of this file is documented at https://github.com/7Ji/arch_repo_builder#config
+dephash_strategy: strict
+basepkgs: [base-devel, bc, distcc, ccache, meson, libqmi, protobuf-c, glib2, git]
+home_binds: [.cache/ccache, .config/ccache]
+pkgbuilds:
+ 
+  tinyalsa-git: https://aur.archlinux.org/tinyalsa-git.git
+  # UCM files for OnePlus (sdm845)
+  alsa-ucm-oneplus:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Configure MAC addresses at boot
+  bootmac:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Lenovo tab P12 Pro 12.6 custom files
+  device-lenovo-q706f:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Oneplus 6T custom files
+  device-oneplus-fajita:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Lenovo sm8250 platform firmware  
+  linux-firmware-lenovo-sm8250:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Oneplus sdm845 platform firmware
+  linux-firmware:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Snapdragon sdm845 kernel
+  linux-sdm845:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Snapdragon sm8250 kernel
+  linux-sm8250:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Configure MAC addresses at boot for ath11k
+  persistent-mac:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  q6voiced:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  qbootctl:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  soc-qcom-sdm845:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  hexagonrpcd:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /sensors/hexagonrpcd
+  iio-sensor-proxy:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /sensors/iio-sensor-proxy
+  libssc:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /sensors/libssc

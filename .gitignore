@@ -1,0 +1,12 @@
+linux-firmware/
+aarch64-firmware/
+bootmac/
+pkg/
+src/
+repo/
+*.pkg.tar.zst
+*.pkg.tar.xz
+*.db
+*.sig
+*.xz
+build
