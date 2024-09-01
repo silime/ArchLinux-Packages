@@ -45,10 +45,6 @@ package() {
     install -Dm644 ${srcdir}/iio-sensor-proxy.service "${pkgdir}/usr/lib/systemd/system/"
 }
 
-cleanup() {
-  rm -rf "$srcdir"
-}
-trap cleanup EXIT
 sha256sums=('SKIP'
             '8bbf420c74f84a7395d4f2eca17bf59f21049cbbe95e6c1514e53bdb30aae4a5'
             '35ad12b2ac60de7fcfdd79547c21cbbc767a0c32e1035e27ae775284975bd9e9')
