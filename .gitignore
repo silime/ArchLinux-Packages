@@ -1,6 +1,3 @@
-linux-firmware/
-aarch64-firmware/
-bootmac/
 pkg/
 src/
 repo/
