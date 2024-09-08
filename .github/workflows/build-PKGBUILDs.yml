@@ -42,9 +42,6 @@ jobs:
           ${{ env.BUILD_SH }} "pacman-key --lsign F60FD4C6D426DAB6"
           ${{ env.BUILD_SH }} "pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git"
           ${{ env.BUILD_SH }} "chown -R alarm /build"
-          ${{ env.BUILD_SH }} "useradd -d /home/alarm -m -U alarm --root $(realpath ./builder)"
-          ${{ env.BUILD_SH }} "echo -e 'root:root\nalarm:alarm' | chpasswd --root $(realpath ./builder)"
-          ${{ env.BUILD_SH }} "usermod -a -G wheel alarm --root $(realpath ./builder)"
           ${{ env.BUILD_SH }} "echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
         shell: bash
 
