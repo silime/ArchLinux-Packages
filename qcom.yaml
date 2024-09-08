@@ -26,25 +26,25 @@ pkgbuilds:
     branch: main
     subtree: /
   # Lenovo sm8250 platform firmware  
-  # linux-firmware-lenovo-sm8250:
-  #   url: GH/silime/ArchLinux-Packages
-  #   branch: main
-  #   subtree: /
-  # # Oneplus sdm845 platform firmware
-  # linux-firmware:
-  #   url: GH/silime/ArchLinux-Packages
-  #   branch: main
-  #   subtree: /
-  # # Snapdragon sdm845 kernel
-  # linux-sdm845:
-  #   url: GH/silime/ArchLinux-Packages
-  #   branch: main
-  #   subtree: /
-  # # Snapdragon sm8250 kernel
-  # linux-sm8250:
-  #   url: GH/silime/ArchLinux-Packages
-  #   branch: main
-  #   subtree: /
+  linux-firmware-lenovo-sm8250:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Oneplus sdm845 platform firmware
+  linux-firmware:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Snapdragon sdm845 kernel
+  linux-sdm845:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
+  # Snapdragon sm8250 kernel
+  linux-sm8250:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
   # Configure MAC addresses at boot for ath11k
   persistent-mac:
     url: GH/silime/ArchLinux-Packages
