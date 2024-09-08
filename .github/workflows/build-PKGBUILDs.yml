@@ -47,12 +47,16 @@ jobs:
       - name: Setup GPG
         run: |
           # Import the GPG private key
-          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c "echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback"'
+          echo 1
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback''
           # Configure the GPG agent to use the passphrase
+          echo 2
           ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf''
+          echo 3
           ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf''
+          echo 4
           ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'gpgconf --reload gpg-agent''
-          
+          echo 5
 
       - name: Sign the file
         run: |
