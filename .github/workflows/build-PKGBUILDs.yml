@@ -46,17 +46,19 @@ jobs:
 
       - name: Setup GPG
         run: |
-          # Import the GPG private key
-          ${{ env.BUILD_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import'
 
           # Configure the GPG agent to use the passphrase
-          ${{ env.BUILD_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
-          ${{ env.BUILD_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
-          ${{ env.BUILD_SH }} 'gpgconf --reload gpg-agent'
-          
-          # Set the passphrase for the GPG key
-          ${{ env.BUILD_SH }} 'echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --edit-key "${{ secrets.GPG_KEY_ID }}" trust quit'
-          # 
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf''
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf''
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'gpgconf --reload gpg-agent''
+          # Import the GPG private key
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback''
+
+      - name: Sign the file
+        run: |
+          echo "This is a test file." > testfile.txt
+          gpg --armor --detach-sign --output testfile.sig testfile.txt
+
       - name: Build packages
         run: |
           ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c "cd /build/ && ./build.sh qcom"'
