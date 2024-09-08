@@ -47,7 +47,9 @@ jobs:
       - name: Setup GPG
         run: |
           # Import the GPG private key
-          ${{ env.BUILD_SH }} 'echo "$GPG_PRIVATE_KEY" | gpg --import'
+          echo "GPG_PRIVATE_KEY=$GPG_PRIVATE_KEY" >> $GITHUB_ENV
+          echo "GPG_PASSPHRASE=$GPG_PASSPHRASE" >> $GITHUB_ENV
+          ${{ env.BUILD_SH }} 'echo "${{ env.GPG_PRIVATE_KEY }}" | gpg --import'
 
           # Configure the GPG agent to use the passphrase
           ${{ env.BUILD_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
@@ -55,7 +57,7 @@ jobs:
           ${{ env.BUILD_SH }} 'gpgconf --reload gpg-agent'
           
           # Set the passphrase for the GPG key
-          ${{ env.BUILD_SH }} 'echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit'
+          ${{ env.BUILD_SH }} 'echo "${{ env.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit'
 
       - name: Build packages
         run: |
