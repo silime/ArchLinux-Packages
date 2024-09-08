@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       BUILD_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/bash -c'
-      BUILD_NOBODY_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c'
+      BUILD_ALARM_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - alarm -c'
 
     steps:
       - name: checkout repo
@@ -41,33 +41,37 @@ jobs:
           ${{ env.BUILD_SH }} "pacman-key --recv-keys F60FD4C6D426DAB6"
           ${{ env.BUILD_SH }} "pacman-key --lsign F60FD4C6D426DAB6"
           ${{ env.BUILD_SH }} "pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git"
-          ${{ env.BUILD_SH }} 'echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers'
-          ${{ env.BUILD_SH }} "chown -R nobody /build"
+          ${{ env.BUILD_SH }} 'echo "alarm ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers'
+          ${{ env.BUILD_SH }} "chown -R alarm /build"
+          ${{ env.BUILD_SH }} "useradd -d /home/alarm -m -U alarm --root /mnt"
+          ${{ env.BUILD_SH }} "echo -e 'root:root\nalarm:alarm' | chpasswd --root /mnt"
+          ${{ env.BUILD_SH }} "usermod -a -G wheel alarm --root /mnt"
+          ${{ env.BUILD_SH }} "echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
         shell: bash
 
       - name: Setup GPG
         run: |
           # Import the GPG private key
           echo 1
-          ${{ env.BUILD_NOBODY_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
+          ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
           # Configure the GPG agent to use the passphrase
           echo 2
-          ${{ env.BUILD_NOBODY_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
+          ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
           echo 3
-          ${{ env.BUILD_NOBODY_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
+          ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
           echo 4
-          ${{ env.BUILD_NOBODY_SH }} 'gpgconf --reload gpg-agent'
+          ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
           echo 5
 
       - name: Sign the file
         run: |
-          ${{ env.BUILD_NOBODY_SH }}   'echo "This is a test file." > ~/testfile.txt'
-          ${{ env.BUILD_NOBODY_SH }}   'gpg --armor --detach-sign --output ~/testfile.sig ~/testfile.txt'
+          ${{ env.BUILD_ALARM_SH }}   'echo "This is a test file." > ~/testfile.txt'
+          ${{ env.BUILD_ALARM_SH }}   'gpg --armor --detach-sign --output ~/testfile.sig ~/testfile.txt'
 
       - name: Build packages
         run: |
-          ${{ env.BUILD_NOBODY_SH }}   "cd /build/ && ./build.sh qcom"'
-          ${{ env.BUILD_NOBODY_SH }}   "ls /build/repo/qcom"'
+          ${{ env.BUILD_ALARM_SH }}   "cd /build/ && ./build.sh qcom"'
+          ${{ env.BUILD_ALARM_SH }}   "ls /build/repo/qcom"'
         
       - name: create release
         uses: softprops/action-gh-release@v1
