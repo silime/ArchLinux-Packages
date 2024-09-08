@@ -34,7 +34,7 @@ jobs:
           sudo mount --bind ./builder ./builder
           sudo cp /usr/bin/qemu-aarch64-static ./builder/usr/bin/qemu-aarch64-static
           sudo cp {build.sh,qcom.yaml} ./builder/build
-          sudo curl -L -o ./builder/etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf"
+          sudo curl -L -o ./builder/etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf
           ${{ env.BUILD_SH }} "pacman -R --ask=4 linux-aarch64"
           ${{ env.BUILD_SH }} "pacman-key --init && pacman-key --populate archlinuxarm"
           ${{ env.BUILD_SH }} "pacman-key --recv-keys F60FD4C6D426DAB6"
