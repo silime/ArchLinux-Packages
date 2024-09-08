@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env: 
       BUILD_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/bash -c'
+      BUILD_NOBODY_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c'
 
     steps:
       - name: checkout repo
@@ -48,25 +49,25 @@ jobs:
         run: |
           # Import the GPG private key
           echo 1
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
+          ${{ env.BUILD_NOBODY_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
           # Configure the GPG agent to use the passphrase
           echo 2
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
+          ${{ env.BUILD_NOBODY_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
           echo 3
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
+          ${{ env.BUILD_NOBODY_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
           echo 4
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  'gpgconf --reload gpg-agent'
+          ${{ env.BUILD_NOBODY_SH }} 'gpgconf --reload gpg-agent'
           echo 5
 
       - name: Sign the file
         run: |
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  'echo "This is a test file." > ~/testfile.txt'
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  'gpg --armor --detach-sign --output ~/testfile.sig ~/testfile.txt'
+          ${{ env.BUILD_NOBODY_SH }}   'echo "This is a test file." > ~/testfile.txt'
+          ${{ env.BUILD_NOBODY_SH }}   'gpg --armor --detach-sign --output ~/testfile.sig ~/testfile.txt'
 
       - name: Build packages
         run: |
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  "cd /build/ && ./build.sh qcom"'
-          sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - nobody -c  "ls /build/repo/qcom"'
+          ${{ env.BUILD_NOBODY_SH }}   "cd /build/ && ./build.sh qcom"'
+          ${{ env.BUILD_NOBODY_SH }}   "ls /build/repo/qcom"'
         
       - name: create release
         uses: softprops/action-gh-release@v1
