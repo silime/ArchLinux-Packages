@@ -1,0 +1,90 @@
+name: Build repo packages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/README.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env: 
+      BUILD_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/bash -c'
+      BUILD_ALARM_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/su - alarm -c'
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set variables
+        run: |
+          echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setup builder
+        run: |
+          sudo apt update && sudo apt install qemu-user-static libarchive-tools arch-install-scripts
+          sudo curl -L -o ./ArchLinuxARM-aarch64-latest.tar.gz http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+          sudo mkdir -p ./builder/build
+          sudo bsdtar -xpf ./ArchLinuxARM-aarch64-latest.tar.gz -C ./builder
+          sudo mount --bind ./builder ./builder
+          sudo cp /usr/bin/qemu-aarch64-static ./builder/usr/bin/qemu-aarch64-static
+          sudo cp {build.sh,qcom.yaml} ./builder/build
+          sudo curl -L -o ./builder/etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf
+          ${{ env.BUILD_SH }} "pacman -R --ask=4 linux-aarch64"
+          ${{ env.BUILD_SH }} "pacman-key --init && pacman-key --populate archlinuxarm"
+          ${{ env.BUILD_SH }} "pacman-key --recv-keys F60FD4C6D426DAB6"
+          ${{ env.BUILD_SH }} "pacman-key --lsign F60FD4C6D426DAB6"
+          ${{ env.BUILD_SH }} "pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git"
+          ${{ env.BUILD_SH }} "chown -R alarm /build"
+          ${{ env.BUILD_SH }} "echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
+        shell: bash
+
+      - name: Setup GPG
+        run: |
+          # Import the GPG private key
+          echo 1
+          ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
+          # Configure the GPG agent to use the passphrase
+          echo 2
+          ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
+          echo 3
+          ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
+          echo 4
+          ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
+          echo 5
+
+      - name: Sign the file
+        run: |
+          ${{ env.BUILD_ALARM_SH }} 'echo "This is a test file." > ~/testfile.txt'
+          ${{ env.BUILD_ALARM_SH }} 'gpg --armor --detach-sign --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback --output ~/testfile.sig ~/testfile.txt'
+
+      - name: Build packages
+        run: |
+          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'
+          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
+        
+      - name: create release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body: ${{ env.RELEASE }}
+          tag_name: ${{ env.RELEASE }}
+          draft: false
+          prerelease: false
+          files: |
+            ./builder/build/repo/qcom/*
+
+      - name: delete old releases
+        uses: dev-drprasad/delete-older-releases@v0.2.0
+        with:
+          keep_latest: 1
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
