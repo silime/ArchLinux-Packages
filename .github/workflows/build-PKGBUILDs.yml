@@ -55,7 +55,7 @@ jobs:
           ${{ env.BUILD_SH }} 'gpgconf --reload gpg-agent'
           
           # Set the passphrase for the GPG key
-          ${{ env.BUILD_SH }} 'echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --edit-key "$GPG_KEY_ID" trust quit'
+          ${{ env.BUILD_SH }} 'echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --edit-key "${{ secrets.GPG_KEY_ID }}" trust quit'
           # 
       - name: Build packages
         run: |
