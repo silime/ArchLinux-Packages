@@ -1,0 +1,50 @@
+name: Build repo packages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "**/README.md"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env: 
+      BUILD_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/bash -c'
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v2
+
+      - name: Set variables
+        run: |
+          echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
+        shell: bash
+
+      - name: generate builder
+        run: |
+          sudo apt update && sudo apt install qemu-user-static libarchive-tools arch-install-scripts
+          sudo curl -L -o ./ArchLinuxARM-aarch64-latest.tar.gz http://os.archlinuxarm.org/os/ArchLinuxARM-aarch64-latest.tar.gz
+          sudo mkdir -p ./builder/build
+          sudo bsdtar -xpf ./ArchLinuxARM-aarch64-latest.tar.gz -C ./builder
+          sudo mount --bind ./builder ./builder
+          sudo cp /usr/bin/qemu-aarch64-static ./builder/usr/bin/qemu-aarch64-static
+          sudo cp {build.sh,qcom.yaml} ./builder/build
+          sudo su --pty -p -s /bin/bash -c "cat >> ./builder/etc/pacman.conf  << EOF
+          [qcom]
+          Server = https://github.com/silime/ArchLinux-Packages/releases/download/$arch
+          EOF"
+          ${{ env.BUILD_SH }} "pacman -R --ask=4 linux-aarch64"
+          ${{ env.BUILD_SH }} "pacman-key --init && pacman-key --populate archlinuxarm"
+          ${{ env.BUILD_SH }} "pacman-key --recv-keys F60FD4C6D426DAB6"
+          ${{ env.BUILD_SH }} "pacman-key --lsign F60FD4C6D426DAB6"
+          ${{ env.BUILD_SH }} "pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git"
+          ${{ env.BUILD_SH }} 'echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers'
+          ${{ env.BUILD_SH }} 'cat /etc/sudoers'
+          ${{ env.BUILD_SH }} "chown -R nobody /build"
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c "/build/build.sh qcom"'
+        shell: bash
