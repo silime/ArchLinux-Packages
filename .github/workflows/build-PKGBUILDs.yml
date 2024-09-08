@@ -66,8 +66,8 @@ jobs:
 
       - name: Build packages
         run: |
-          ${{ env.BUILD_ALARM_SH }} "cd /build/ && ./build.sh qcom"'
-          ${{ env.BUILD_ALARM_SH }} "ls /build/repo/qcom"'
+          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'
+          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
         
       - name: create release
         uses: softprops/action-gh-release@v1

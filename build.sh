@@ -74,7 +74,7 @@ for ((i = 0; i < ${#pkg[@]}; i++)); do
         echo "${pkg[i]} already signed, skipping ..."
     else
         echo "Signing ${pkg[i]} ..."
-        gpg --detach-sign --no-armor ${pkg[i]}
+        gpg --detach-sign --no-armor --passphrase "$3" --pinentry-mode loopback  ${pkg[i]}
     fi
 done
 
