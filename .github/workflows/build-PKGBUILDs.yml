@@ -48,7 +48,7 @@ jobs:
         run: |
           # Import the GPG private key
           echo 1
-          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback''
+          sudo arch-chroot ./builder qemu-aarch64-static su - nobody -c 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
           # Configure the GPG agent to use the passphrase
           echo 2
           ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf''
