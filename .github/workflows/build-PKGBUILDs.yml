@@ -43,5 +43,5 @@ jobs:
           ${{ env.BUILD_SH }} 'echo "nobody ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers'
           ${{ env.BUILD_SH }} "chown -R nobody /build"
           ${{ env.BUILD_SH }} 'cd /build/'
-          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c "/build/build.sh qcom"'
+          ${{ env.BUILD_SH }} 'su nobody --pty -p -s /bin/bash -c "./build.sh qcom"'
         shell: bash
