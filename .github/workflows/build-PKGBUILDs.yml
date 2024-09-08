@@ -47,8 +47,8 @@ jobs:
       - name: Setup GPG
         run: |
           # Import the GPG private key
-          echo "GPG_PRIVATE_KEY=$GPG_PRIVATE_KEY" >> $GITHUB_ENV
-          echo "GPG_PASSPHRASE=$GPG_PASSPHRASE" >> $GITHUB_ENV
+          echo GPG_PRIVATE_KEY=$GPG_PRIVATE_KEY >> $GITHUB_ENV
+          echo GPG_PASSPHRASE=$GPG_PASSPHRASE >> $GITHUB_ENV
           ${{ env.BUILD_SH }} 'echo "${{ env.GPG_PRIVATE_KEY }}" | gpg --import'
 
           # Configure the GPG agent to use the passphrase
