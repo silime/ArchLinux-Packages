@@ -62,7 +62,7 @@ jobs:
       - name: Sign the file
         run: |
           ${{ env.BUILD_ALARM_SH }} 'echo "This is a test file." > ~/testfile.txt'
-          ${{ env.BUILD_ALARM_SH }} 'gpg --armor --detach-sign --output ~/testfile.sig ~/testfile.txt'
+          ${{ env.BUILD_ALARM_SH }} 'gpg --armor --detach-sign --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback --output ~/testfile.sig ~/testfile.txt'
 
       - name: Build packages
         run: |
