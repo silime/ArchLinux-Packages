@@ -4,7 +4,7 @@ pkgrel=0
 pkgdesc="Qualcomm HexagonFS daemon"
 arch=('aarch64')
 license=(GPL-3.0-or-later)
-depends=(libmbim libqrtr-glib qrtr)
+depends=(libmbim libqrtr-glib qrtr libssc)
 _commit=b7eff23db1b11541d11175bd3f42bd4c85214baf
 source=("git+https://gitlab.com/sdm670-mainline/hexagonrpc.git#commit=$_commit"
 	"10-fastrpc.rules"
