@@ -111,6 +111,7 @@ jobs:
         name: linux-sm8250-aarch64-latest
         path: release
   build-packages:
+    needs: [build-linux-firmware, build-kernel] 
     runs-on: ubuntu-latest
     env: 
       BUILD_SH: 'sudo arch-chroot ./builder qemu-aarch64-static /usr/bin/bash -c'
