@@ -62,14 +62,21 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: linux-firmware-aarch64-latest
+  
+    - name: ls artifacts
+      run: |
+        ls ./
 
-    - name: Upload assets
-      uses: svenstaro/upload-release-action@v2
+    - name: create release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        repo_token: ${{ secrets.BUILD_TOKEN }}
-        file: ./*-latest/*
-        tag: ${{ github.ref }}
-        overwrite: true
-        file_glob: true
+        body: ${{ github.ref }}
+        tag_name: ${{ github.ref }}
+        draft: false
+        prerelease: false
+        files: |
+          ./*-latest/*
 
       

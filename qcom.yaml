@@ -1,6 +1,6 @@
 # Format of this file is documented at https://github.com/7Ji/arch_repo_builder#config
 dephash_strategy: strict
-basepkgs: [base-devel, bc, distcc, ccache, meson, libqmi, protobuf-c, glib2, git, libssc]
+basepkgs: [base-devel, bc, distcc, ccache, meson, libqmi, protobuf-c, glib2, git]
 home_binds: [.cache/ccache, .config/ccache]
 pkgbuilds:
  
