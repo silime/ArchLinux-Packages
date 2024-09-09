@@ -73,7 +73,7 @@ jobs:
       - name: create artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.RELEASE }}-logs
+          name: logs
           path: ./builder/build/logs.tar # or path/to/artifact
 
       - name: create release
