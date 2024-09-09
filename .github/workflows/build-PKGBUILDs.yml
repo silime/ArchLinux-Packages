@@ -66,9 +66,10 @@ jobs:
 
       - name: Build packages
         run: |
+          ${{ env.BUILD_ALARM_SH }} 'git config --global user.email "chalkinbot@users.noreply.github.com"'
+          ${{ env.BUILD_ALARM_SH }} 'git config --global user.name "chalkinbot"'
           ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'          
-          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
-          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ls ./ && tar -cvf logs.tar ./build/logs'
+          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && tar -cvf logs.tar ./build/logs'
 
       - name: create artifact
         uses: actions/upload-artifact@v4
