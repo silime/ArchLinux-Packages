@@ -35,7 +35,7 @@ jobs:
         chown -R nobody .
 
         # Package compression settings (Matches latest Arch)
-        # export PKGEXT='.pkg.tar.zst'
+        export PKGEXT='.pkg.tar.xz'
         # export COMPRESSZST=(zstd -c -T0 --ultra -20 -)
         export MAKEFLAGS="-j2"
 
@@ -90,7 +90,7 @@ jobs:
         # Fix permissions (can't makepkg as root)
         chown -R nobody .
         # Package compression settings (Matches latest Arch)
-        # export PKGEXT='.pkg.tar.zst'
+        export PKGEXT='.pkg.tar.xz'
         # export COMPRESSZST=(zstd -c -T0 --ultra -20 -)
         export MAKEFLAGS="-j9"
         # Build
@@ -120,6 +120,11 @@ jobs:
     steps:
       - name: checkout repo
         uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v4
+    
+      - name: Display structure of downloaded files
+        run: ls -R
 
       - name: Set variables
         run: |
