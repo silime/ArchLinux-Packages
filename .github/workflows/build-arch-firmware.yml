@@ -67,16 +67,13 @@ jobs:
       run: |
         ls ./
 
-    - name: create release
-      uses: softprops/action-gh-release@v2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Upload assets
+      uses: svenstaro/upload-release-action@v2
       with:
-        body: ${{ github.ref }}
-        tag_name: ${{ github.ref }}
-        draft: false
-        prerelease: false
-        files: |
-          ./*-latest/*
+        repo_token: ${{ secrets.BUILD_TOKEN }}
+        file: ./*
+        tag: ${{ github.ref }}
+        overwrite: true
+        file_glob: true
 
       

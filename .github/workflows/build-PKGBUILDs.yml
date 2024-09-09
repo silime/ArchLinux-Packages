@@ -65,14 +65,16 @@ jobs:
           ${{ env.BUILD_ALARM_SH }} 'gpg --armor --detach-sign --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback --output ~/testfile.sig ~/testfile.txt'
 
       - name: Build packages
-        run: 
-          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
+        run: |
+          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'          
+          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
           ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ls ./ && tar -cvf logs.tar /build/logs'
+
       - name: create artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.RELEASE }}-logs
-          path: ./builder/build/logs.tar # or path/to/artifact
+          path: ./builder/build/build/logs/ # or path/to/artifact
 
       - name: create release
         uses: softprops/action-gh-release@v2
