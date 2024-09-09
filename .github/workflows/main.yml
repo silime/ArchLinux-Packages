@@ -15,7 +15,7 @@ jobs:
         run: sudo bash build_action.sh
 
       - name: Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: linux-sdm845-aarch64-latest
           path: ${{ github.workspace }}/artifact/
@@ -26,12 +26,12 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
       with:
         name: linux-sdm845-aarch64-latest
 
     - name: Upload assets
-      uses: svenstaro/upload-release-action@v1-release
+      uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.BUILD_TOKEN }}
         file: ./*

@@ -65,15 +65,14 @@ jobs:
           ${{ env.BUILD_ALARM_SH }} 'gpg --armor --detach-sign --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback --output ~/testfile.sig ~/testfile.txt'
 
       - name: Build packages
-        run: |
-          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'
-          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
-      
+        run: 
+          ${{ env.BUILD_ALARM_SH }} 'cd /build/ && ./build.sh qcom qcom "${{ secrets.GPG_PASSPHRASE }}"'          ${{ env.BUILD_ALARM_SH }} 'ls /build/repo/qcom'
+          ${{ env.BUILD_ALARM_SH }} 'tar -cvf /build/"${{ env.RELEASE }}"-logs.tar /build/build/logs'
       - name: create artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.RELEASE }}-logs
-          path: ./builder/build/build/logs/ # or path/to/artifact
+          path: ./builder/build/${{ env.RELEASE }}-logs.tar # or path/to/artifact
 
       - name: create release
         uses: softprops/action-gh-release@v2
@@ -87,10 +86,10 @@ jobs:
           files: |
             ./builder/build/repo/qcom/*
 
-      - name: delete old releases
-        uses: dev-drprasad/delete-older-releases@v0.3.4
-        with:
-          keep_latest: 1
-          delete_tags: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: delete old releases
+      #   uses: dev-drprasad/delete-older-releases@v0.3.4
+      #   with:
+      #     keep_latest: 1
+      #     delete_tags: true
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

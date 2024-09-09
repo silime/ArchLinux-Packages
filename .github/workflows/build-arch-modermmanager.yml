@@ -48,7 +48,7 @@ jobs:
         mv modemmanager/*.pkg.tar.zst release
  
     - name: Upload artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: modemmanager
         path: release
@@ -60,12 +60,12 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: modemmanager
 
     - name: Upload assets
-      uses: svenstaro/upload-release-action@v1-release
+      uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.BUILD_TOKEN }}
         file: ./modemmanager/*

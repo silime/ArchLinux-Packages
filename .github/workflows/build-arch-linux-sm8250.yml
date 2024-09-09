@@ -52,7 +52,7 @@ jobs:
         mv linux-sm8250/*.pkg.tar.zst release
  
     - name: Upload artifacts
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: linux-sm8250-aarch64-latest
         path: release
@@ -64,12 +64,12 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v1
+      uses: actions/download-artifact@v4
       with:
         name: linux-sm8250-aarch64-latest
 
     - name: Upload assets
-      uses: svenstaro/upload-release-action@v1-release
+      uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.BUILD_TOKEN }}
         file: ./*-latest/*
