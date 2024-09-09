@@ -185,9 +185,9 @@ jobs:
           sudo mount --bind ./builder ./builder
           sudo cp /usr/bin/qemu-aarch64-static ./builder/usr/bin/qemu-aarch64-static
           sudo cp {build.sh,qcom.yaml} ./builder/build
-          sudo mkdir -p ./builder/build/pkgs/updated/
-          sudo cp linux-*/*.pkg.tar.xz ./builder/build/pkgs/updated/
-          ls ./builder/build/pkgs/updated/
+          sudo mkdir -p ./builder/build/build/pkgs/updated/
+          sudo cp linux-*/*.pkg.tar.xz ./builder/build/build/pkgs/updated/
+          ls ./builder/build/build/pkgs/updated/
           sudo curl -L -o ./builder/etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf
           ${{ env.BUILD_SH }} "pacman -R --ask=4 linux-aarch64"
           ${{ env.BUILD_SH }} "pacman-key --init && pacman-key --populate archlinuxarm"

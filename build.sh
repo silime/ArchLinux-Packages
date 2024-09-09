@@ -64,7 +64,7 @@ cd ../
 mkdir -p repo/$repo_name
 cp -L build/pkgs/updated/* repo/$repo_name
 cd repo/$repo_name
-
+ls -R
 # Sign pkg
 colorecho "$BLUE" "Signing new packages ..."
 
