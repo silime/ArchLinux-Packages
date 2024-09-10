@@ -2,13 +2,13 @@ name: Build repo packages
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *"
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "**/README.md"
+  # schedule:
+  #   - cron: "0 0 * * *"
+  # push:
+  #   branches:
+  #     - main
+  #   paths-ignore:
+  #     - "**/README.md"
 
 jobs:
   build-linux-firmware:
@@ -238,7 +238,7 @@ jobs:
           body: ${{ env.RELEASE }}
           tag_name: ${{ env.RELEASE }}
           draft: false
-          prerelease: true
+          prerelease: false
           files: |
             ./builder/build/repo/qcom/*
 
