@@ -238,7 +238,7 @@ jobs:
           body: ${{ env.RELEASE }}
           tag_name: ${{ env.RELEASE }}
           draft: false
-          prerelease: false
+          prerelease: true
           files: |
             ./builder/build/repo/qcom/*
 
