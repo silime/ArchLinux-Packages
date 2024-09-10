@@ -3,7 +3,7 @@
 # Based on Arch Linux and Arch Linux for ARM PKGBUILDs
 
 pkgbase="linux-sdm845"
-pkgver="6.10.0"
+pkgver="6.11.0"
 pkgrel="3"
 
 _pkgdesc="Kernel for sdm845 (development version)"
@@ -12,10 +12,10 @@ arch=('aarch64')
 options=("!strip")
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git' 'dtc')
 options=('!strip')
-_tag="sdm845-6.10-dev"
+_tag="sdm845-6.11.0_rc2-r2"
 _srcname="linux-${_tag}"
 
-source=("https://gitlab.com/sdm845-mainline/linux/-/archive/sdm845/6.10-dev/linux-sdm845-6.10-dev.tar.gz"
+source=("https://gitlab.com/sdm845-mainline/linux/-/archive/${_tag}/linux-${_tag}.tar.gz"
         'config'
         'linux.preset'
         '60-linux.hook'

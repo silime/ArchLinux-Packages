@@ -5,6 +5,6 @@ post_upgrade() {
 }
 
 post_remove() {
-    rm -f boot/initramfs-linux-surface.img
-    rm -f boot/initramfs-linux-surface-fallback.img
+    rm -f boot/initramfs-linux-sdm845.img
+    rm -f boot/initramfs-linux-sdm845-fallback.img
 }
