@@ -28,8 +28,8 @@ cd build
 
 if [ ! -f "arb" ]; then
     if [ "$system_arch" == "aarch64" ] || [ "$system_arch" == "arm64" ] || [ "$system_arch" == "armv8" ]; then
-        curl -LJO https://github.com/kwankiu/PKGBUILDs/releases/download/arb/arb-aarch64
-        mv arb-aarch64 arb
+        curl -LJO https://github.com/silime/ArchLinux-Packages/releases/download/arb/arch_repo_builder
+        mv arch_repo_builder arb
         sudo chmod +x arb
     elif [ "$system_arch" == "x86_64" ]; then
         curl -LJO https://github.com/kwankiu/PKGBUILDs/releases/download/arb/arb-x86_64

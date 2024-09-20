@@ -58,7 +58,7 @@ jobs:
         name: linux-firmware-aarch64-latest
         path: firmware-release
   build-kernel-sm8250:
-    name: Build Linux kernel package
+    name: Build Linux sm8250 kernel package
     runs-on: ubuntu-latest
     container: archlinux
 
