@@ -3,7 +3,7 @@ Description=Mark current boot as successful in Android A/B interface
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/qbootctl -m
+ExecStart=/usr/bin/qbootctl -m
 
 [Install]
 WantedBy=multi-user.target

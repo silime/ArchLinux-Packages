@@ -16,7 +16,7 @@ source=("git+https://github.com/linux-msm/qbootctl.git#commit=$_commit"
 		"qbootctl.service"
         "qbootctl.install")
 sha256sums=("SKIP"
-			"f6c4c90a8d41dc1436ae3c1ab7e7b0b6f9e4a8953a2f38831e8f6bbf8ad3ec01"
+            "cbc221a67fb1b4d6ca06bea7fbd33b9796e8755560bdf9478aad235837c330ec"
             "a7af669c24972a088a8808e9d33992abbaeb705b6d92f300764b3909b75c8040")
 
 pkgver() {
