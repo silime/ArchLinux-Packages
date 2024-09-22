@@ -31,7 +31,7 @@ source=("https://github.com/silime/linux/archive/${_commit}.tar.gz"
 md5sums=('SKIP'
          '86d4a35722b5410e3b29fc92dae15d4b'
          'a46f336d5c5088d47d7fa6b0eb6b3522'
-         '4263008e001e101676aa76ba0efc8ba2')
+         'c6f0be5aa8bdb00dfc91f46109c249c9')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
