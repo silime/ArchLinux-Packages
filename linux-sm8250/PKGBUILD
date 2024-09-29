@@ -13,7 +13,7 @@ _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
 pkgver=${_rcver}
 #pkgver=${_rcver}
-pkgrel=1
+pkgrel=2
 arch=('aarch64')
 url="http://www.kernel.org/"
 license=('GPL2')
@@ -33,7 +33,7 @@ md5sums=('SKIP'
          'a46f336d5c5088d47d7fa6b0eb6b3522'
          'ce6c81ad1ad1f8b333fd6077d47abdaf'
          '1836528ba0a45595a209b6ac10e97d30'
-         '907282e0eff782ddcdb9fa9c3df9297b')
+         'a314251b723d63b1dfa014d7854400bb')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
