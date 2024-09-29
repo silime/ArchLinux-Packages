@@ -13,7 +13,7 @@ _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
 pkgver=${_rcver}
 #pkgver=${_rcver}
-pkgrel=1
+pkgrel=2
 arch=('aarch64')
 url="http://www.kernel.org/"
 license=('GPL2')
@@ -29,11 +29,11 @@ source=("https://github.com/silime/linux/archive/${_commit}.tar.gz"
 )
 
 md5sums=('SKIP'
-         '86d4a35722b5410e3b29fc92dae15d4b'
+         'e8fdedd8aa54c10ad676402b89b3a859'
          'a46f336d5c5088d47d7fa6b0eb6b3522'
          'ce6c81ad1ad1f8b333fd6077d47abdaf'
-         '1836528ba0a45595a209b6ac10e97d30'
-         '907282e0eff782ddcdb9fa9c3df9297b')
+         'a041fc9e1993593d2e5b8713a8a38b48'
+         'a314251b723d63b1dfa014d7854400bb')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
@@ -138,8 +138,8 @@ _package() {
    install -Dm644 /dev/stdin "${pkgdir}/usr/share/libalpm/hooks/90-${pkgbase}.hook"
   # rather than use another hook (90-linux.hook) rely on mkinitcpio's 90-mkinitcpio-install.hook
   # which avoids a double run of mkinitcpio that can occur
-  # install -d "${pkgdir}/usr/lib/firmware/"
-  # echo "dummy file to trigger mkinitcpio to run" > "${pkgdir}/usr/lib/firmware/${_kernver}"
+  install -d "${pkgdir}/usr/lib/initcpio/"
+  echo "dummy file to trigger mkinitcpio to run" > "${pkgdir}/usr/lib/initcpio/$(<version)"
 }
 
 _package-headers() {
