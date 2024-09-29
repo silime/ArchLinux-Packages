@@ -56,7 +56,7 @@ build() {
 
   # get kernel version
   make prepare
-
+  make -s kernelrelease > version
   # load configuration
   # Configure the kernel. Replace the line below with one of your choice.
   #make menuconfig # CLI menu for configuration
