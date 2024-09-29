@@ -1,0 +1,30 @@
+# Maintainer: chalkin Deng <chalkin@yeah.net>
+
+_pkgname=mkbootimg
+pkgname="${_pkgname}"
+pkgver=android.14.0.0_r73.r7.ga306f82
+pkgrel=1
+pkgdesc="Android mkbootimg + unpack_bootimg + repack_bootimg"
+arch=('i686' 'x86_64' 'aarch64' 'armv7h')
+url="https://android.googlesource.com/platform/system/tools/mkbootimg"
+license=('BSD-3-Clause') # mincrypt license
+source=("${_pkgname}::git+https://android.googlesource.com/platform/system/tools/mkbootimg")
+sha256sums=('SKIP')
+depends=("python3")
+provides=("${_pkgname}" unpackbootimg)
+conflicts=("${_pkgname}" unpackbootimg)
+makedepends=(git)
+
+pkgver() {
+  cd "${_pkgname}"
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+package() {
+  cd "${_pkgname}"
+  mkdir -p "${pkgdir}/usr/lib/python3.12/site-packages"
+  cp -r gki "${pkgdir}/usr/lib/python3.12/site-packages"
+  install -Dm755 mkbootimg.py "${pkgdir}/usr/bin/mkbootimg"
+  install -Dm755 unpack_bootimg.py "${pkgdir}/usr/bin/unpackbootimg"
+  install -Dm755 epack_bootimg.py "${pkgdir}/usr/bin/repackbootimg"
+}

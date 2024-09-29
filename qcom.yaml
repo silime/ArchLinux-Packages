@@ -46,6 +46,10 @@ pkgbuilds:
   #   branch: main
   #   subtree: /
   # Configure MAC addresses at boot for ath11k
+  mkbootimg:
+    url: GH/silime/ArchLinux-Packages
+    branch: main
+    subtree: /
   persistent-mac:
     url: GH/silime/ArchLinux-Packages
     branch: main
