@@ -73,7 +73,7 @@ jobs:
         pacman --noconfirm -Syu
         pacman --noconfirm -S sudo binutils fakeroot base-devel git   \
                               xmlto docbook-xsl kmod inetutils bc dtc \
-                              aarch64-linux-gnu-gcc aarch64-linux-gnu-glibc
+                              aarch64-linux-gnu-gcc aarch64-linux-gnu-glibc python3
         # Fix permissions (can't makepkg as root)
         echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
     - name: Set up makepkg-aarch64 for cross-compilation
@@ -123,7 +123,7 @@ jobs:
         pacman --noconfirm -Syu
         pacman --noconfirm -S sudo binutils fakeroot base-devel git   \
                               xmlto docbook-xsl kmod inetutils bc dtc \
-                              aarch64-linux-gnu-gcc aarch64-linux-gnu-glibc
+                              aarch64-linux-gnu-gcc aarch64-linux-gnu-glibc python3
         # Fix permissions (can't makepkg as root)
         echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" >> /etc/sudoers
     - name: Set up makepkg-aarch64 for cross-compilation
