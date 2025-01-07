@@ -26,5 +26,5 @@ package() {
   cp -r gki "${pkgdir}/usr/lib/python3.12/site-packages"
   install -Dm755 mkbootimg.py "${pkgdir}/usr/bin/mkbootimg"
   install -Dm755 unpack_bootimg.py "${pkgdir}/usr/bin/unpackbootimg"
-  install -Dm755 epack_bootimg.py "${pkgdir}/usr/bin/repackbootimg"
+  install -Dm755 repack_bootimg.py "${pkgdir}/usr/bin/repackbootimg"
 }
