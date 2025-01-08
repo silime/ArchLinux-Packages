@@ -15,13 +15,13 @@
 _pkgbase=linux-firmware
 pkgbase=${_pkgbase}-lenovo-sm8250
 pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom ${pkgbase}-sensors)
-_tag=20240811
-pkgver=20240823.1be7345
+_tag=20241210
+pkgver=20241210.b00a7f7e
 pkgrel=1
 pkgdesc="Firmware files for Linux"
 url="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=summary"
 license=('GPL2' 'GPL3' 'custom')
-_commit="1be73450f1aaa6896c59fc1768a4fc98abe7cbda"
+_commit="c5888a7da030d76325f73a5441a285bd9eaef001"
 arch=('any')
 makedepends=('git')
 options=(!strip)
