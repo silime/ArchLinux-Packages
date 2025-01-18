@@ -1,0 +1,10 @@
+evdev:input:b00??v17EFp6127*
+ KEYBOARD_KEY_c0224=esc               # Back Key
+ KEYBOARD_KEY_c0390=leftmeta          # Globe Key
+ KEYBOARD_KEY_c0391=f20               # Mic mute Key
+ KEYBOARD_KEY_c0393=search            # Search Key
+ KEYBOARD_KEY_c0394=unknown           # Fullscreen Key
+ KEYBOARD_KEY_c0395=unknown           # Split Application
+ KEYBOARD_KEY_c0396=unknown           # Dock Key
+ KEYBOARD_KEY_c038e=screenlock        # Lock key
+ KEYBOARD_KEY_c0392=f21               # touchpad off

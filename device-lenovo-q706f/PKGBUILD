@@ -1,6 +1,6 @@
 pkgname=device-lenovo-q706f
 pkgver=0.0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Lenovo Tab P12 Pro Custom config files"
 arch=('aarch64')
 license=('MIT')
@@ -12,20 +12,24 @@ source=("81-libssc-lenovo-q706f.rules"
         "HiFi.conf"
         "device-lenovo-q706f.install"
         "no-suspend.conf"
-        "power-key-lock.conf")
+        "power-key-lock.conf"
+        "60-lenovo-keyboard.hwdb")
 sha256sums=('ea3522e8e54577940bf3a65bf448d7b1d8b11a81d032cc7761daceee9c04d28e'
             'f2bfc8f5b67787aebd6f6c82d1da5698ca13039c4f1760b6be655822b057ca67'
             'c073c55462f4d4fc97d850781a5f1f5533ccd765549a05fef366122861696222'
             '33eb6e7970cb14c62be6f33ee9ee991356b613b51e6dc6983371d23bc1f02005'
             'e8dc595225574198e117c1ac9b98764257dc6e4cf5f816ce063c8c20e8e0e201'
             'c60c4116bd637b7630c423499f937f734fd63959a5237eca217097e788ce4d14'
-            'e37ac99a96cbcdbd48d72da7482d55c67f2fe95f1c1d8d487af30a7b09a70e33')
+            'e37ac99a96cbcdbd48d72da7482d55c67f2fe95f1c1d8d487af30a7b09a70e33'
+            'f1e095b6a919cade7b3e6f262e4cf7b10c4636609a27ce81f51b16f9f94bd288')
 
 package() {
     install="${pkgname}.install"
     # install udev rules
     install -Dm644  "${srcdir}"/*.rules \
         -t "${pkgdir}/usr/lib/udev/rules.d/"
+    install -Dm644  "${srcdir}"/60-lenovo-keyboard.hwdb \
+        -t "${pkgdir}/usr/lib/udev/hwdb.d/"
     # install seneors config
     install -Dm644 "${srcdir}"/hexagonrpcd.conf "$pkgdir/etc/hexagonrpcd/hexagonrpcd-sdsp.conf"
     # device-specific alsa ucm conf
