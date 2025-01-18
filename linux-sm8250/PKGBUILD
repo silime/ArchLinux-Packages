@@ -3,17 +3,17 @@
 # Contributor: Oleg Rakhmanov <oleg@archlinuxarm.org>
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
-_rcver=6.12
+_rcver=6.13
 _rcrel=0
 pkgbase=linux-sm8250
-_commit=ba983bdccc3955fbaf78fa8698469295895ea0ef
+_commit=ff61dd629750554365e15ca096fc532c0e8c799b
 _srcname=linux-${_commit}
 
 _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
 pkgver=${_rcver}
 #pkgver=${_rcver}
-pkgrel=2
+pkgrel=1
 arch=('aarch64')
 url="http://www.kernel.org/"
 license=('GPL2')
