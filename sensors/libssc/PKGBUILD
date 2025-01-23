@@ -1,5 +1,5 @@
 pkgname=libssc
-pkgver=0.1.6+r4+ge0ee55f
+pkgver=v0.2.1+r1+g0da6a75
 pkgrel=1
 pkgdesc="Library to expose Qualcomm Sensor Core sensors"
 url="https://codeberg.org/DylanVanAssche/libssc"
@@ -9,7 +9,7 @@ makedepends=( "libqmi" "glib2" "protobuf-c" "meson")
 provides=(libssc.so)
 depends=('protobuf-c' 'libqmi')
 subpackages=("libssc-dbg" "libssc-dev")
-_commit=e0ee55f83b0fa44a315713c26ab5d695a448cad6
+_commit=0da6a755e247e378ad8dcbcc7b35f6c8b73538f6
 source=("git+https://codeberg.org/DylanVanAssche/libssc.git#commit=$_commit")
 
 sha256sums=('SKIP')
