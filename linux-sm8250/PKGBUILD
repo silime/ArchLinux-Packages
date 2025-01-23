@@ -3,24 +3,24 @@
 # Contributor: Oleg Rakhmanov <oleg@archlinuxarm.org>
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
-_rcver=6.13
+_rcver=6.12
 _rcrel=0
 pkgbase=linux-sm8250
-_commit=ff61dd629750554365e15ca096fc532c0e8c799b
-_srcname=linux-${_commit}
+_commit=c9fc410fd29dd5a0a97fee5a1fe33f7c9893674e  
+_srcname=linux-sm8250-${_commit}
 
 _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
 pkgver=${_rcver}
 #pkgver=${_rcver}
-pkgrel=1
+pkgrel=3
 arch=('aarch64')
 url="http://www.kernel.org/"
 license=('GPL2')
 # LTO kernel requires lld depend
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("https://gitlab.com/sm8250-mainline/linux/-/archive/${_commit}/linux-${_commit}.tar.gz"
+source=("https://gitlab.com/chalkin/linux-sm8250/-/archive/${_commit}/linux-${_commit}.tar.gz"
         'linux-sm8250.preset'
         'linux-sm8250.install'
         '60-linux.hook'
@@ -81,7 +81,7 @@ build() {
   # LTO kernel compile
   # make LLVM=1 LLVM_IAS=1 ${MAKEFLAGS} Image modules dtbs
 
-  make ${MAKEFLAGS} Image.gz modules dtbs
+  make ${MAKEFLAGS} Image.gz modules dtbs -j9
 }
 
 _package() {
