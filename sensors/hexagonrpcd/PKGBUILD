@@ -1,25 +1,25 @@
 pkgname=hexagonrpcd
 pkgver=0.3.2
-pkgrel=0
+pkgrel=1
 pkgdesc="Qualcomm HexagonFS daemon"
 arch=('aarch64')
 license=(GPL-3.0-or-later)
 depends=(libmbim libqrtr-glib qrtr libssc)
-_commit=b7eff23db1b11541d11175bd3f42bd4c85214baf
-source=("git+https://gitlab.com/sdm670-mainline/hexagonrpc.git#commit=$_commit"
-	"10-fastrpc.rules"
-	"hexagonrpcd-adsp-rootpd.service"
-	"hexagonrpcd-adsp-sensorspd.service"
-	"hexagonrpcd-sdsp.service"
-	"hexagonrpcd.install"
-	"hexagonrpcd.conf")
+_commit=5620db43a79d5c622ef60f0850456d9f2a8efc08
+source=("git+https://github.com/linux-msm/hexagonrpc.git#commit=$_commit"
+        "10-fastrpc.rules"
+        "hexagonrpcd-adsp-rootpd.service"
+        "hexagonrpcd-adsp-sensorspd.service"
+        "hexagonrpcd-sdsp.service"
+        "hexagonrpcd.install"
+        "hexagonrpcd.conf")
 sha256sums=('SKIP'
             '41dfc4e8c4fd88f461a5a6e4a4e86849eb302f8bcb2b5ce2efa9690f5415d52d'
             '6b64a64a4bf1459e0d3c8576d536b4d3f9719e610e7039c288217ea71d401efc'
             '9ee2ba932bd8956df271dcdf5a0813109cd590cee75e931bc0a6d7dad0a4ec21'
-	        '4ae8e0969a6cbcf3e31d8a8ad1436f29231f5dd6be85b2aa43144a8262ca2f98'
+            '4ae8e0969a6cbcf3e31d8a8ad1436f29231f5dd6be85b2aa43144a8262ca2f98'
             'a19ca1b11b34980d75557e454222538a7d082cf991e17c574f24a20112d45166'
-    	    '8a38d1c8bc47dac97be52d8dd239db28f36f8ddc9bd746bbecc5e671f9cfdee6')
+            '8a38d1c8bc47dac97be52d8dd239db28f36f8ddc9bd746bbecc5e671f9cfdee6')
 
 prepare() {
   cd hexagonrpc
