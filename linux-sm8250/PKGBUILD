@@ -6,8 +6,8 @@
 _rcver=6.13
 _rcrel=0
 pkgbase=linux-sm8250
-_commit=ff61dd629750554365e15ca096fc532c0e8c799b
-_srcname=linux-${_commit}
+_commit=aacc748741fe4f836abeda75e9d04f8e1d0fe2c1
+_srcname=linux-sm8250-${_commit}
 
 _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
@@ -20,7 +20,7 @@ license=('GPL2')
 # LTO kernel requires lld depend
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("https://gitlab.com/sm8250-mainline/linux/-/archive/${_commit}/linux-${_commit}.tar.gz"
+source=("https://gitlab.com/chalkin/linux-sm8250/-/archive/${_commit}/linux-sm8250-${_commit}.tar.gz"
         'linux-sm8250.preset'
         'linux-sm8250.install'
         '60-linux.hook'
