@@ -3,24 +3,24 @@
 # Contributor: Oleg Rakhmanov <oleg@archlinuxarm.org>
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
-_rcver=6.13
+_rcver=6.14
 _rcrel=0
 pkgbase=linux-sm8250
-_commit=9b7311c8ea9f2b4bee6215aa2427f1f3ce6a690b
-_srcname=linux-sm8250-${_commit}
+_commit=5dd7b13cdc046704944efa31098351c5e077dc37
+_srcname=linux-${_commit}
 
 _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
 pkgver=${_rcver}
 #pkgver=${_rcver}
-pkgrel=2
+pkgrel=1
 arch=('aarch64')
 url="http://www.kernel.org/"
 license=('GPL2')
 # LTO kernel requires lld depend
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("https://gitlab.com/chalkin/linux-sm8250/-/archive/${_commit}/linux-sm8250-${_commit}.tar.gz"
+source=("https://gitlab.postmarketos.org/sm8250-mainline/linux/-/archive/${_commit}/linux-${_commit}.tar.gz"
         'linux-sm8250.preset'
         'linux-sm8250.install'
         '60-linux.hook'
