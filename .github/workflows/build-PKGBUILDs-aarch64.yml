@@ -36,7 +36,8 @@ jobs:
             'sensors/iio-sensor-proxy',
             'sensors/hexagonrpcd',
             'sensors/libssc',
-            'tinyalsa-git'
+            'tinyalsa-git',
+            'chromium'
         ]
     
     steps:

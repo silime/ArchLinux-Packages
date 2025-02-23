@@ -1,0 +1,113 @@
+From b5979cb63521797aa6e6d7ae3c6ccfa4a38eada0 Mon Sep 17 00:00:00 2001
+From: Jianfeng Liu <liujianfeng1994@gmail.com>
+Forwarded: no
+Date: Mon, 18 Nov 2024 13:31:46 +0800
+Subject: [PATCH 1/4] enable v4l2 av1 decoder for linux
+
+---
+ media/gpu/v4l2/BUILD.gn                                | 4 ++--
+ media/gpu/v4l2/v4l2_utils.cc                           | 8 ++++----
+ media/gpu/v4l2/v4l2_video_decoder.cc                   | 4 ++--
+ media/gpu/v4l2/v4l2_video_decoder_backend_stateless.cc | 2 +-
+ 4 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/media/gpu/v4l2/BUILD.gn b/media/gpu/v4l2/BUILD.gn
+index ddde1522dd..0280605b97 100644
+--- a/media/gpu/v4l2/BUILD.gn
++++ b/media/gpu/v4l2/BUILD.gn
+@@ -53,6 +53,8 @@ source_set("v4l2") {
+     "v4l2_video_decoder_delegate_vp9.h",
+     "v4l2_vp9_helpers.cc",
+     "v4l2_vp9_helpers.h",
++    "v4l2_video_decoder_delegate_av1.cc",
++    "v4l2_video_decoder_delegate_av1.h",
+   ]
+ 
+   if (enable_hevc_parser_and_hw_decoder) {
+@@ -73,8 +75,6 @@ source_set("v4l2") {
+   if (is_chromeos) {
+     sources += [
+       # AV1 delegate depends on header files only in ChromeOS SDK
+-      "v4l2_video_decoder_delegate_av1.cc",
+-      "v4l2_video_decoder_delegate_av1.h",
+ 
+       # TODO(crbug.com/901264): Encoders use hack for passing offset
+       # within a DMA-buf, which is not supported upstream.
+diff --git a/media/gpu/v4l2/v4l2_utils.cc b/media/gpu/v4l2/v4l2_utils.cc
+index 9646e8be73..87d93bdff8 100644
+--- a/media/gpu/v4l2/v4l2_utils.cc
++++ b/media/gpu/v4l2/v4l2_utils.cc
+@@ -205,7 +205,7 @@ VideoCodecProfile V4L2ProfileToVideoCodecProfile(uint32_t v4l2_codec,
+       }
+       break;
+ #endif
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+     case V4L2_CID_MPEG_VIDEO_AV1_PROFILE:
+       switch (v4l2_profile) {
+         case V4L2_MPEG_VIDEO_AV1_PROFILE_MAIN:
+@@ -338,7 +338,7 @@ static const std::map<v4l2_enum_type, v4l2_enum_type>
+         {V4L2_PIX_FMT_VP8_FRAME, V4L2_CID_MPEG_VIDEO_VP8_PROFILE},
+         {V4L2_PIX_FMT_VP9, V4L2_CID_MPEG_VIDEO_VP9_PROFILE},
+         {V4L2_PIX_FMT_VP9_FRAME, V4L2_CID_MPEG_VIDEO_VP9_PROFILE},
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+         {V4L2_PIX_FMT_AV1, V4L2_CID_MPEG_VIDEO_AV1_PROFILE},
+         {V4L2_PIX_FMT_AV1_FRAME, V4L2_CID_MPEG_VIDEO_AV1_PROFILE},
+ #endif
+@@ -359,7 +359,7 @@ static const std::map<v4l2_enum_type, std::vector<VideoCodecProfile>>
+ #endif  // BUILDFLAG(ENABLE_HEVC_PARSER_AND_HW_DECODER)
+         {V4L2_CID_MPEG_VIDEO_VP8_PROFILE, {VP8PROFILE_ANY}},
+         {V4L2_CID_MPEG_VIDEO_VP9_PROFILE, {VP9PROFILE_PROFILE0}},
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+         {V4L2_CID_MPEG_VIDEO_AV1_PROFILE, {AV1PROFILE_PROFILE_MAIN}},
+ #endif
+ };
+@@ -379,7 +379,7 @@ static const std::map<VideoCodecProfile,
+         {VP8PROFILE_ANY, MAKE_V4L2_CODEC_PAIR(V4L2_PIX_FMT_VP8, FRAME)},
+         {VP9PROFILE_PROFILE0, MAKE_V4L2_CODEC_PAIR(V4L2_PIX_FMT_VP9, FRAME)},
+         {VP9PROFILE_PROFILE2, MAKE_V4L2_CODEC_PAIR(V4L2_PIX_FMT_VP9, FRAME)},
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+         {AV1PROFILE_PROFILE_MAIN,
+          MAKE_V4L2_CODEC_PAIR(V4L2_PIX_FMT_AV1, FRAME)},
+ #endif
+diff --git a/media/gpu/v4l2/v4l2_video_decoder.cc b/media/gpu/v4l2/v4l2_video_decoder.cc
+index 5a9b9a5461..ee194ad56c 100644
+--- a/media/gpu/v4l2/v4l2_video_decoder.cc
++++ b/media/gpu/v4l2/v4l2_video_decoder.cc
+@@ -770,7 +770,7 @@ CroStatus V4L2VideoDecoder::SetExtCtrls10Bit(const gfx::Size& size) {
+   std::vector<struct v4l2_ext_control> ctrls;
+   struct v4l2_ctrl_hevc_sps v4l2_sps;
+   struct v4l2_ctrl_vp9_frame v4l2_vp9_frame;
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+   struct v4l2_ctrl_av1_sequence v4l2_av1_sequence;
+ #endif
+ 
+@@ -810,7 +810,7 @@ CroStatus V4L2VideoDecoder::SetExtCtrls10Bit(const gfx::Size& size) {
+     ctrl.ptr = &v4l2_vp9_frame;
+ 
+     ctrls.push_back(ctrl);
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS)  || BUILDFLAG(IS_LINUX)
+   } else if (input_format_fourcc_ == V4L2_PIX_FMT_AV1_FRAME) {
+     // AV1 only requires that the |bit_depth| parameter be set to enable
+     // 10 bit formats on the CAPTURE queue.
+diff --git a/media/gpu/v4l2/v4l2_video_decoder_backend_stateless.cc b/media/gpu/v4l2/v4l2_video_decoder_backend_stateless.cc
+index ec4cc2c771..2d0c05ecbd 100644
+--- a/media/gpu/v4l2/v4l2_video_decoder_backend_stateless.cc
++++ b/media/gpu/v4l2/v4l2_video_decoder_backend_stateless.cc
+@@ -741,7 +741,7 @@ bool V4L2StatelessVideoDecoderBackend::CreateDecoder() {
+     decoder_ = std::make_unique<VP9Decoder>(
+         std::make_unique<V4L2VideoDecoderDelegateVP9>(this, device_.get()),
+         profile_, color_space_);
+-#if BUILDFLAG(IS_CHROMEOS)
++#if BUILDFLAG(IS_CHROMEOS) || BUILDFLAG(IS_LINUX)
+   } else if (profile_ >= AV1PROFILE_MIN && profile_ <= AV1PROFILE_MAX) {
+     decoder_ = std::make_unique<AV1Decoder>(
+         std::make_unique<V4L2VideoDecoderDelegateAV1>(this, device_.get()),
+-- 
+2.43.0
+
