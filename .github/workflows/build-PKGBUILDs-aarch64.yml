@@ -1,98 +1,141 @@
-name: Build aarch64 repo packages
+name: Build Arch Repository
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 0 * * *"
-  # push:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - "**/README.md"
+  push:
+    branches: [ main ]
+
+env:
+  REPO_NAME: qcom
+  BUILD_DIR: ${{ github.workspace }}/build
+  REPO_DIR: ${{ github.workspace }}/repo
 
 jobs:
   build-packages:
+    name: Build Package (${{ matrix.package }})
     runs-on: ubuntu-22.04-arm
     container: danhunsaker/archlinuxarm
     env: 
       BUILD_ALARM_SH: 'sudo su - alarm -c'
-
+    strategy:
+      matrix:
+        package: [
+            'q6voiced',
+            'soc-qcom-sdm845',
+            'persistent-mac',
+            'linux-firmware',
+            'qbootctl',
+            'bootmac',
+            'alsa-ucm-oneplus',
+            'device-oneplus-fajita',
+            'device-lenovo-q706f',
+            'mkbootimg',
+            'linux-firmware-lenovo-sm8250',
+            'linux-sdm845',
+            'linux-sm8250',
+            'sensors/iio-sensor-proxy',
+            'sensors/hexagonrpcd',
+            'sensors/libssc'
+        ]
+    
     steps:
-      - name: Install build dependencies
-        run: |
-          # Install makepkg deps
-          uname -a
-          pacman --noconfirm -Syu
-          pacman --noconfirm -S sudo binutils fakeroot base-devel git rdfind
 
-      - name: checkout repo
-        uses: actions/checkout@v4
+    - name: Install dependencies
+      run: | 
+        curl -L -o /etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf
+        pacman-key --init && pacman-key --populate archlinuxarm
+        pacman-key --recv-keys F60FD4C6D426DAB6
+        pacman-key --lsign F60FD4C6D426DAB6
+        pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc ccache meson libqmi protobuf-c glib2
+        useradd -m alarm
+        passwd -d alarm
+        usermod -aG wheel alarm
+        echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+        mkdir /home/alarm/ -p
+        chown alarm /home/alarm/
+    - name: Setup GPG
+      run: |
+        # Import the GPG private key
+        echo 1
+        ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
+        # Configure the GPG agent to use the passphrase
+        echo 2
+        ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
+        echo 3
+        ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
+        echo 4
+        ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
+        echo 5
+        
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set variables
-        run: |
-          echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
-        shell: bash
+    - name: Build package
+      working-directory: ${{ github.workspace }}/${{ matrix.package }}
+      run: |
+        # 构建参数配置
+        export MAKEPKG_CONF="/etc/makepkg.conf"
+        echo 'BUILDENV=(!distcc color !ccache check !sign)' | sudo tee -a $MAKEPKG_CONF
+        # 清理并构建
+        sudo chown alarm:alarm ./
+        echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g')
+        echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g') >> $GITHUB_ENV
 
-      - name: Setup builder
-        run: |
-          curl -L -o /etc/pacman.conf https://github.com/silime/ArchlinuxARM-qcom-aarch64/raw/main/pacman.conf
-          pacman-key --init && pacman-key --populate archlinuxarm
-          pacman-key --recv-keys F60FD4C6D426DAB6
-          pacman-key --lsign F60FD4C6D426DAB6
-          pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git
-          useradd -m alarm
-          passwd -d alarm
-          usermod -aG wheel alarm
-          echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-          cp ./* /home/alarm/ -r
-          mkdir  /packages
-          chown alarm /home/alarm/* /packages
-        shell: bash
+        cp ./* /home/alarm/
+        ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
 
-      - name: Setup GPG
-        run: |
-          # Import the GPG private key
-          echo 1
-          ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
-          # Configure the GPG agent to use the passphrase
-          echo 2
-          ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
-          echo 3
-          ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
-          echo 4
-          ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
-          echo 5
-      - name: Build packages
-        run: |
-          ${{ env.BUILD_ALARM_SH }} 'git config --global user.email "chalkinbot@users.noreply.github.com"'
-          ${{ env.BUILD_ALARM_SH }} 'git config --global user.name "chalkinbot"'
-          ${{ env.BUILD_ALARM_SH }} 'ls -l'
-          ${{ env.BUILD_ALARM_SH }} './build_repo.sh "${{ secrets.GPG_PASSPHRASE }}" qcom'
-          ${{ env.BUILD_ALARM_SH }} 'ls -R'
-          ${{ env.BUILD_ALARM_SH }} 'cp ./*/*.pkg.tar.zst /packages'
+    - name: Sign package
+      working-directory: ${{ github.workspace }}/${{ matrix.package }}
+      run: |
+        ${{ env.BUILD_ALARM_SH }} '
+        for pkg in /home/alarm/*.pkg.tar.*; do
+          [[ -f "$pkg" ]] || continue
+          echo "Signing $pkg ..."
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase ${{ secrets.GPG_PASSPHRASE }}\
+            --detach-sign --no-armor "$pkg"
+        done'
 
-      - name: create artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs
-          path: ./build/logs.tar # or path/to/artifact
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.RELEASE }}-pkg 
+        path: |
+          /home/alarm/*.pkg.tar.*
+          /home/alarm/*.sig
 
-      # - name: create release
-      #   uses: softprops/action-gh-release@v2
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     body: ${{ env.RELEASE }}
-      #     tag_name: ${{ env.RELEASE }}
-      #     draft: false
-      #     prerelease: false
-      #     files: |
-      #       ./build/repo/qcom/*
+  create-repository:
+    name: Create Repository
+    runs-on: ubuntu-22.04-arm
+    needs: build-packages
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ env.BUILD_DIR }}
 
-      # - name: delete old releases
-      #   uses: dev-drprasad/delete-older-releases@v0.3.4
-      #   with:
-      #     keep_latest: 1
-      #     delete_tags: true
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Setup repository directory
+      run: |
+        mkdir -p ${{ env.REPO_DIR }}
+        find ${{ env.BUILD_DIR }} -name '*.pkg.tar.*' -exec cp {} ${{ env.REPO_DIR }} \;
+        find ${{ env.BUILD_DIR }} -name '*.sig' -exec cp {} ${{ env.REPO_DIR }} \;
+
+    - name: Generate repository database
+      working-directory: ${{ env.REPO_DIR }}
+      run: |
+        repo-add -s -v ${{ env.REPO_NAME }}.db.tar.gz *.pkg.tar.zst
+        ln -s ${{ env.REPO_NAME }}.db.tar.gz ${{ env.REPO_NAME }}.db
+        ln -s ${{ env.REPO_NAME }}.files.tar.gz ${{ env.REPO_NAME }}.files
+
+    - name: Upload repository
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.REPO_NAME }}
+        path: ${{ env.REPO_DIR }}/*
+
+    # - name: Deploy to GitHub Pages
+    #   if: github.ref == 'refs/heads/main'
+    #   uses: peaceiris/actions-gh-pages@v3
+    #   with:
+    #     github_token: ${{ secrets.GITHUB_TOKEN }}
+    #     publish_dir: ${{ env.REPO_DIR }}
