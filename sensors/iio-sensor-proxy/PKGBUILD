@@ -6,7 +6,7 @@
 
 pkgname=iio-sensor-proxy
 pkgver=3.6
-pkgrel=1
+pkgrel=2
 pkgdesc='IIO accelerometer sensor to input device proxy'
 arch=('aarch64')
 url='https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/'
@@ -14,7 +14,7 @@ license=('GPL2')
 depends=('systemd' 'libgudev' 'glib2' 'polkit' 'libssc')
 makedepends=('meson' 'libssc')
 checkdepends=('python-gobject' 'python-dbusmock' 'python-psutil' 'umockdev')
-_commit=bb817139c0f0e7b5129326cac87c2e054ee71a6b
+_commit=74fa32e134cc139c565dc515c8ea9a8fd11b7e6b
 source=("git+https://gitlab.freedesktop.org/hadess/iio-sensor-proxy.git#commit=$_commit"
         "iio-sensor-proxy.service")
 # pkgver() {
@@ -28,7 +28,7 @@ prepare() {
 build() {
   arch-meson iio-sensor-proxy build \
   -Db_lto=true \
-  		-Dssc-support=true \
+  		-Dssc-support=enabled  \
   		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
                     -Dudevrulesdir=/usr/lib/udev/rules.d \
                     -Dsysconfdir=/usr/share
