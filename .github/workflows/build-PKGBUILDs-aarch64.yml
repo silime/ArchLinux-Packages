@@ -7,8 +7,8 @@ on:
 
 env:
   REPO_NAME: qcom
-  BUILD_DIR: ${{ github.workspace }}/build
-  REPO_DIR: ${{ github.workspace }}/repo
+  BUILD_DIR: build
+  REPO_DIR: repo
 
 jobs:
   build-packages:
@@ -36,8 +36,7 @@ jobs:
             'sensors/iio-sensor-proxy',
             'sensors/hexagonrpcd',
             'sensors/libssc',
-            'tinyalsa-git',
-            'chromium'
+            'tinyalsa-git'
         ]
     
     steps:
@@ -86,30 +85,21 @@ jobs:
         cp ./* /home/alarm/
         ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
 
-    - name: Sign package
-      working-directory: ${{ github.workspace }}/${{ matrix.package }}
-      run: |
-        ${{ env.BUILD_ALARM_SH }} '
-        for pkg in /home/alarm/*.pkg.tar.*; do
-          [[ -f "$pkg" ]] || continue
-          echo "Signing $pkg ..."
-          gpg --batch --yes --pinentry-mode loopback \
-            --passphrase ${{ secrets.GPG_PASSPHRASE }}\
-            --detach-sign --no-armor "$pkg"
-        done'
-
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.RELEASE }}-pkg 
         path: |
           /home/alarm/*.pkg.tar.*
-          /home/alarm/*.sig
 
   create-repository:
     name: Create Repository
     runs-on: ubuntu-22.04-arm
     needs: build-packages
+    container: danhunsaker/archlinuxarm
+    env: 
+      BUILD_ALARM_SH: 'sudo su - alarm -c'
+
     steps:
     - name: Download all artifacts
       uses: actions/download-artifact@v4
@@ -119,25 +109,57 @@ jobs:
     - name: Setup repository directory
       run: |
         mkdir -p ${{ env.REPO_DIR }}
-        find ${{ env.BUILD_DIR }} -name '*.pkg.tar.*' -exec cp {} ${{ env.REPO_DIR }} \;
-        find ${{ env.BUILD_DIR }} -name '*.sig' -exec cp {} ${{ env.REPO_DIR }} \;
-
-    - name: Generate repository database
-      working-directory: ${{ env.REPO_DIR }}
+        pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc
+        useradd -m alarm
+        passwd -d alarm
+        usermod -aG wheel alarm
+        echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+        mkdir /home/alarm/ -p
+        chown alarm /home/alarm/
+        find ./ -mindepth 2 -name '*.pkg.tar.*' -exec cp {} ${{ env.REPO_DIR }} \;
+    - name: Setup GPG
       run: |
-        repo-add -s -v ${{ env.REPO_NAME }}.db.tar.gz *.pkg.tar.zst
-        ln -s ${{ env.REPO_NAME }}.db.tar.gz ${{ env.REPO_NAME }}.db
-        ln -s ${{ env.REPO_NAME }}.files.tar.gz ${{ env.REPO_NAME }}.files
+        # Import the GPG private key
+        ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
+        # Configure the GPG agent to use the passphrase
+        ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
+        ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
+        ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
+    - name: Sign package
+      run: |
+        cp ${{ env.REPO_DIR }}/* /home/alarm/ -r
+        chown -R alarm:alarm /home/alarm/*
+        ${{ env.BUILD_ALARM_SH }} '
+        for pkg in /home/alarm/*.pkg.tar.*; do
+          [[ -f "$pkg" ]] || continue
+          echo "Signing $pkg ..."
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase ${{ secrets.GPG_PASSPHRASE }}\
+            --detach-sign --no-armor "$pkg"
+        done'
+    - name: Generate repository database
+      run: |
+        ${{ env.BUILD_ALARM_SH }} 'repo-add -s -v -n ${{ env.REPO_NAME }}.db.tar.xz *.pkg.tar.xz'
 
     - name: Upload repository
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.REPO_NAME }}
-        path: ${{ env.REPO_DIR }}/*
+        path: /home/alarm/*
+    
+    - name: Set variables
+      run: |
+        echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
+      shell: bash
 
-    # - name: Deploy to GitHub Pages
-    #   if: github.ref == 'refs/heads/main'
-    #   uses: peaceiris/actions-gh-pages@v3
-    #   with:
-    #     github_token: ${{ secrets.GITHUB_TOKEN }}
-    #     publish_dir: ${{ env.REPO_DIR }}
+    - name: create release
+      uses: softprops/action-gh-release@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        body: ${{ env.RELEASE }}
+        tag_name: ${{ env.RELEASE }}
+        draft: false
+        prerelease: false
+        files: |
+          /home/alarm/*
