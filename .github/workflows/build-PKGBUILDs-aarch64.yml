@@ -54,19 +54,6 @@ jobs:
         echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
         mkdir /home/alarm/ -p
         chown alarm /home/alarm/
-    - name: Setup GPG
-      run: |
-        # Import the GPG private key
-        echo 1
-        ${{ env.BUILD_ALARM_SH }} 'echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import --passphrase "${{ secrets.GPG_PASSPHRASE }}" --pinentry-mode loopback'
-        # Configure the GPG agent to use the passphrase
-        echo 2
-        ${{ env.BUILD_ALARM_SH }} 'echo "default-cache-ttl 18000" > ~/.gnupg/gpg-agent.conf'
-        echo 3
-        ${{ env.BUILD_ALARM_SH }} 'echo "max-cache-ttl 18000" >> ~/.gnupg/gpg-agent.conf'
-        echo 4
-        ${{ env.BUILD_ALARM_SH }} 'gpgconf --reload gpg-agent'
-        echo 5
         
     - name: Checkout repository
       uses: actions/checkout@v4
