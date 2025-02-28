@@ -15,8 +15,8 @@
 _pkgbase=linux-firmware
 pkgbase=${_pkgbase}-lenovo-sm8250
 pkgname=(${pkgbase}-whence ${pkgbase} ${pkgbase}-qcom ${pkgbase}-sensors)
-_tag=20241210
-pkgver=20241210.b00a7f7e
+_tag=20250211
+pkgver=20250211.c5888a7
 pkgrel=1
 pkgdesc="Firmware files for Linux"
 url="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git;a=summary"
@@ -79,8 +79,8 @@ prepare() {
 pkgver() {
   cd ${_pkgbase}
 
-  # Commit date + short rev
-  echo $(TZ=UTC git show -s --pretty=%cd --date=format-local:%Y%m%d HEAD).$(git rev-parse --short HEAD)
+  # tag + short rev
+  echo ${_tag}.$(git rev-parse --short HEAD)
 }
 
 _pick() {
