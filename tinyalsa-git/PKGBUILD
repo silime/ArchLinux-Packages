@@ -41,6 +41,7 @@ build() {
     -DCMAKE_INSTALL_PREFIX='/usr' \
     -DTINYALSA_BUILD_EXAMPLES=ON \
     -DTINYALSA_BUILD_UTILS=ON \
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
     -DTINYALSA_USES_PLUGINS=ON
   cmake --build "${srcdir}/build"
 }
