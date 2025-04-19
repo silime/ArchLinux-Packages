@@ -3,10 +3,10 @@
 # Contributor: Oleg Rakhmanov <oleg@archlinuxarm.org>
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
-_rcver=6.14
+_rcver=6.15
 _rcrel=0
 pkgbase=linux-sm8250
-_commit=5dd7b13cdc046704944efa31098351c5e077dc37
+_commit=14154413466bac6eb431fd6284e38deeacccf2b8
 _srcname=linux-${_commit}
 
 _kernelname=${pkgbase#linux}
@@ -33,7 +33,7 @@ md5sums=('SKIP'
          'a46f336d5c5088d47d7fa6b0eb6b3522'
          'ce6c81ad1ad1f8b333fd6077d47abdaf'
          'a041fc9e1993593d2e5b8713a8a38b48'
-         '7be43e1ed5fa129ece675e626197edd5')
+         '75d95bac0633165d891b71ada59475b6')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
