@@ -4,9 +4,9 @@
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
 _rcver=6.15
-_rcrel=0
+_rcrel=1
 pkgbase=linux-sm8250
-_commit=1b0e7b91fad1feb51a6fca879533668ef713be6d
+_commit=3761f78fe9ddcb73a4ed73cdf01a5907533546eb
 _srcname=linux-${_commit}
 
 _kernelname=${pkgbase#linux}
