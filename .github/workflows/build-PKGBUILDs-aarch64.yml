@@ -63,6 +63,7 @@ jobs:
       run: |
         # 构建参数配置
         export MAKEPKG_CONF="/etc/makepkg.conf"
+        sudo sed -i 's|^#\?PACKAGER=.*|PACKAGER="silime <chalkin@yesh.net>"|' /etc/makepkg.conf
         echo 'BUILDENV=(!distcc color !ccache check !sign)' | sudo tee -a $MAKEPKG_CONF
         # 清理并构建
         sudo chown alarm:alarm ./

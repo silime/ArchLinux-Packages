@@ -1,0 +1,11 @@
+# Proximity was disabled upstream, so this re-enables it.
+# Also enable accel. sensor.
+# See: https://gitlab.freedesktop.org/hadess/iio-sensor-proxy/-/commit/a9d7ff148cd4fa5e40b23b189894b36dd81f51df
+
+ACTION=="remove", GOTO="iio_sensor_proxy_end"
+
+SUBSYSTEM=="misc", KERNEL=="fastrpc-adsp*", ENV{IIO_SENSOR_PROXY_TYPE}+="ssc-accel ssc-proximity"
+SUBSYSTEM=="misc", KERNEL=="fastrpc-sdsp*", ENV{IIO_SENSOR_PROXY_TYPE}+="ssc-accel ssc-proximity"
+
+LABEL="iio_sensor_proxy_end"
+
