@@ -1,11 +1,11 @@
 pkgname=hexagonrpcd
-pkgver=0.3.2
+pkgver=0.4.0
 pkgrel=1
 pkgdesc="Qualcomm HexagonFS daemon"
 arch=('aarch64')
 license=(GPL-3.0-or-later)
 depends=(libmbim libqrtr-glib qrtr libssc)
-_commit=5620db43a79d5c622ef60f0850456d9f2a8efc08
+_commit=dd9ac70c026e1bad93e8cffa3801255b8ceb551e
 source=("git+https://github.com/linux-msm/hexagonrpc.git#commit=$_commit"
         "10-fastrpc.rules"
         "hexagonrpcd-adsp-rootpd.service"
