@@ -95,7 +95,7 @@ jobs:
     - name: Setup repository directory
       run: |
         mkdir -p ${{ env.REPO_DIR }}
-        pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc
+        pacman -Syyu --noconfirm --no-sandbox --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
