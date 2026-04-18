@@ -33,9 +33,7 @@ jobs:
             'linux-firmware-lenovo-sm8250',
             'linux-sdm845',
             'linux-sm8250',
-            'sensors/iio-sensor-proxy',
             'sensors/hexagonrpcd',
-            'sensors/libssc',
             'tinyalsa-git'
         ]
     
