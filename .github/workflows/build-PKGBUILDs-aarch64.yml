@@ -115,7 +115,9 @@ jobs:
     - name: Setup repository directory
       run: |
         mkdir -p ${{ env.REPO_DIR }}
-        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc curl
+        # GitHub's job container cannot create pacman's Landlock sandbox.
+        # Disable it only inside this already-isolated CI container.
+        pacman --disable-sandbox -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc curl
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
