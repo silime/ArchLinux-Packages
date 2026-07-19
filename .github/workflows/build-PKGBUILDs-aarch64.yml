@@ -9,6 +9,9 @@ env:
   REPO_NAME: qcom
   BUILD_DIR: build
   REPO_DIR: repo
+  CHROMIUM_PACKAGE: chromium-150.0.7871.124-3-aarch64.pkg.tar.xz
+  CHROMIUM_PACKAGE_URL: https://github.com/silime/ArchLinux-Packages/releases/download/chromium-150.0.7871.124-3/chromium-150.0.7871.124-3-aarch64.pkg.tar.xz
+  CHROMIUM_PACKAGE_SHA256: ab9b71b7cbee5717de67d87214aae6797a16ba3ba3a9cf5faa6c5b65b3efd4cc
 
 jobs:
   build-packages:
@@ -96,7 +99,7 @@ jobs:
     - name: Setup repository directory
       run: |
         mkdir -p ${{ env.REPO_DIR }}
-        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc
+        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc curl
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
@@ -104,6 +107,13 @@ jobs:
         mkdir /home/alarm/ -p
         chown alarm /home/alarm/
         find ./ -mindepth 2 -name '*.pkg.tar.*' -exec cp {} ${{ env.REPO_DIR }} \;
+    - name: Download prebuilt Chromium package
+      run: |
+        curl --fail --location --retry 5 --retry-all-errors \
+          --output "${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" \
+          "${{ env.CHROMIUM_PACKAGE_URL }}"
+        echo "${{ env.CHROMIUM_PACKAGE_SHA256 }}  ${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" \
+          | sha256sum --check --strict -
     - name: Setup GPG
       run: |
         # Import the GPG private key
