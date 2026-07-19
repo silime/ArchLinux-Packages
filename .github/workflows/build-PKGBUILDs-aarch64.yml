@@ -58,7 +58,7 @@ jobs:
         chown alarm /home/alarm/
         
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
 
     - name: Import Mesa source signing key
       if: matrix.package == 'mesa'
@@ -82,12 +82,21 @@ jobs:
         cp -a ./. /home/alarm/
         ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
 
+    - name: Pack package artifacts
+      run: |
+        mkdir -p /tmp/package-artifacts
+        find /home/alarm -maxdepth 1 -type f -name '*.pkg.tar.*' \
+          -exec cp --target-directory=/tmp/package-artifacts -- {} +
+        test -n "$(find /tmp/package-artifacts -maxdepth 1 -type f -print -quit)"
+        tar --create --file "/tmp/${{ env.RELEASE }}-packages.tar" \
+          --directory /tmp/package-artifacts .
+
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.RELEASE }}-pkg 
-        path: |
-          /home/alarm/*.pkg.tar.*
+        path: /tmp/${{ env.RELEASE }}-packages.tar
+        compression-level: 0
 
   create-repository:
     name: Create Repository
@@ -99,7 +108,7 @@ jobs:
 
     steps:
     - name: Download all artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         path: ${{ env.BUILD_DIR }}
 
@@ -113,7 +122,8 @@ jobs:
         echo 'alarm ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
         mkdir /home/alarm/ -p
         chown alarm /home/alarm/
-        find ./ -mindepth 2 -name '*.pkg.tar.*' -exec cp {} ${{ env.REPO_DIR }} \;
+        find "${{ env.BUILD_DIR }}" -type f -name '*-packages.tar' \
+          -exec tar --extract --file {} --directory "${{ env.REPO_DIR }}" \;
     - name: Download prebuilt Chromium package
       run: |
         curl --fail --location --retry 5 --retry-all-errors \
@@ -146,7 +156,7 @@ jobs:
         ${{ env.BUILD_ALARM_SH }} 'repo-add -s -v -n ${{ env.REPO_NAME }}.db.tar.xz *.pkg.tar.xz'
 
     - name: Upload repository
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.REPO_NAME }}
         path: /home/alarm/*
@@ -157,7 +167,7 @@ jobs:
       shell: bash
 
     - name: create release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
