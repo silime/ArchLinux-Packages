@@ -60,6 +60,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Import Mesa source signing key
+      if: matrix.package == 'mesa'
+      run: |
+        ${{ env.BUILD_ALARM_SH }} 'gpg --batch \
+          --keyserver hkps://keyserver.ubuntu.com \
+          --recv-keys 57551DE15B968F6341C248F68D8E31AFC32428A6'
+
     - name: Build package
       working-directory: ${{ github.workspace }}/${{ matrix.package }}
       run: |
