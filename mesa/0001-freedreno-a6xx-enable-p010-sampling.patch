@@ -1,0 +1,63 @@
+From 8b8de2b1830f30543ffc2da066fcce75b21fde62 Mon Sep 17 00:00:00 2001
+From: chalkin <chalkin@yeah.net>
+Date: Sun, 19 Jul 2026 03:45:00 -0400
+Subject: [PATCH] freedreno/a6xx: enable P010 sampling
+
+A6xx exposes a dedicated P010 texture format, but the combined two-plane
+format is not wired into the freedreno format table or multi-plane texture
+descriptor path. As a result Turnip reports
+VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16 as unsupported even
+though the hardware has a native format for it.
+
+Expose P010 as a sampled format and build its descriptor in the same path as
+NV12. This is needed for importing linear DRM_FORMAT_P010 dma-bufs produced
+by stateful V4L2 video decoders.
+---
+ src/freedreno/fdl/fd6_format_table.c | 1 +
+ src/freedreno/fdl/fd6_view.cc        | 6 ++++--
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/src/freedreno/fdl/fd6_format_table.c b/src/freedreno/fdl/fd6_format_table.c
+--- a/src/freedreno/fdl/fd6_format_table.c
++++ b/src/freedreno/fdl/fd6_format_table.c
+@@ -379,6 +379,7 @@ static const struct fd6_format formats[PIPE_FORMAT_COUNT] = {
+    _T_(R8_G8B8_420_UNORM, R8_G8B8_2PLANE_420_UNORM, WZYX), /* Gallium NV12 */
+    _T_(G8_B8R8_420_UNORM, R8_G8B8_2PLANE_420_UNORM, WZYX), /* Vulkan NV12 */
+    _T_(G8_B8_R8_420_UNORM, R8_G8_B8_3PLANE_420_UNORM, WZYX),
++   _T_(X6G10_X6B10X6R10_420_UNORM, P010, WZYX), /* Vulkan P010 */
+ };
+ /* clang-format on */
+ 
+diff --git a/src/freedreno/fdl/fd6_view.cc b/src/freedreno/fdl/fd6_view.cc
+--- a/src/freedreno/fdl/fd6_view.cc
++++ b/src/freedreno/fdl/fd6_view.cc
+@@ -45,6 +45,7 @@ fdl6_format_swiz(enum pipe_format format, bool has_z24uint_s8uint,
+    case PIPE_FORMAT_B8G8_R8G8_UNORM:
+    case PIPE_FORMAT_G8_B8R8_420_UNORM:
+    case PIPE_FORMAT_G8_B8_R8_420_UNORM:
++   case PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM:
+       /* These formats are currently only used for Vulkan, and border colors
+        * aren't allowed on these formats in Vulkan because, from the
+        * description of VkImageViewCreateInfo:
+@@ -280,7 +281,8 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
+ 
+       if (args->format == PIPE_FORMAT_R8_G8B8_420_UNORM ||
+           args->format == PIPE_FORMAT_G8_B8R8_420_UNORM ||
+-          args->format == PIPE_FORMAT_G8_B8_R8_420_UNORM) {
++          args->format == PIPE_FORMAT_G8_B8_R8_420_UNORM ||
++          args->format == PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM) {
+          /* chroma offset re-uses MIPLVLS bits */
+          assert(args->level_count == 1);
+          if (args->chroma_offsets[0] == FDL_CHROMA_LOCATION_MIDPOINT)
+@@ -368,7 +370,8 @@ fdl6_view_init(struct fdl6_view *view, const struct fdl_layout **layouts,
+ 
+       if (args->format == PIPE_FORMAT_R8_G8B8_420_UNORM ||
+           args->format == PIPE_FORMAT_G8_B8R8_420_UNORM ||
+-          args->format == PIPE_FORMAT_G8_B8_R8_420_UNORM) {
++          args->format == PIPE_FORMAT_G8_B8_R8_420_UNORM ||
++          args->format == PIPE_FORMAT_X6G10_X6B10X6R10_420_UNORM) {
+          uint64_t base_addr[3];
+ 
+          if (ubwc_enabled) {
+-- 
+2.50.1

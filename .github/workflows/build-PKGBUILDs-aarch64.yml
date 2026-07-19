@@ -33,6 +33,7 @@ jobs:
             'linux-firmware-lenovo-sm8250',
             'linux-sdm845',
             'linux-sm8250',
+            'mesa',
             'sensors/hexagonrpcd',
             'tinyalsa-git'
         ]
@@ -61,14 +62,14 @@ jobs:
       run: |
         # 构建参数配置
         export MAKEPKG_CONF="/etc/makepkg.conf"
-        sudo sed -i 's|^#\?PACKAGER=.*|PACKAGER="silime <chalkin@yesh.net>"|' /etc/makepkg.conf
+        sudo sed -i 's|^#\?PACKAGER=.*|PACKAGER="silime <chalkin@yeah.net>"|' /etc/makepkg.conf
         echo 'BUILDENV=(!distcc color !ccache check !sign)' | sudo tee -a $MAKEPKG_CONF
         # 清理并构建
         sudo chown alarm:alarm ./
         echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g')
         echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g') >> $GITHUB_ENV
 
-        cp ./* /home/alarm/
+        cp -a ./. /home/alarm/
         ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
 
     - name: Upload artifacts
