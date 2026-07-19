@@ -1,0 +1,53 @@
+#!/bin/bash
+
+set -euo pipefail
+
+kernel=/boot/vmlinuz
+ramdisk=/boot/initramfs-linux.img
+dtb=/boot/dtb/qcom/sm8250-lenovo-q706f.dtb
+output=/boot/boot.img
+temporary=${output}.new
+
+for file in "$kernel" "$ramdisk" "$dtb"; do
+  if [[ ! -f $file ]]; then
+    echo "linux-sm8250: required boot file is missing: $file" >&2
+    exit 1
+  fi
+done
+
+if systemd-detect-virt --chroot >/dev/null 2>&1; then
+  rootfs=linux
+else
+  root_device=$(findmnt -nro SOURCE /)
+  rootfs=$(lsblk -ndo PARTLABEL "$root_device" 2>/dev/null | head -n1)
+  if [[ -z $rootfs ]]; then
+    echo "linux-sm8250: cannot determine the root filesystem PARTLABEL" >&2
+    exit 1
+  fi
+fi
+
+trap 'rm -f "$temporary"' EXIT
+
+mkbootimg \
+  --header_version 2 \
+  --os_version 11.0.0 \
+  --os_patch_level 2024-05 \
+  --kernel "$kernel" \
+  --ramdisk "$ramdisk" \
+  --dtb "$dtb" \
+  --pagesize 0x00001000 \
+  --base 0x00000000 \
+  --kernel_offset 0x00008000 \
+  --ramdisk_offset 0x01000000 \
+  --second_offset 0x00000000 \
+  --tags_offset 0x00000100 \
+  --dtb_offset 0x0000000001f00000 \
+  --board "" \
+  --cmdline "root=PARTLABEL=${rootfs} rw rootwait audit=0 splash plymouth.ignore-serial-consoles slot_suffix=_b" \
+  --output "$temporary"
+
+chmod 0644 "$temporary"
+mv -f "$temporary" "$output"
+trap - EXIT
+
+echo "linux-sm8250: generated $output for root PARTLABEL=$rootfs"

@@ -3,28 +3,27 @@
 # Contributor: Oleg Rakhmanov <oleg@archlinuxarm.org>
 # Maintainer: Ray Sherwin <slick517d@gmail.com>
 
-_rcver=6.15
-_rcrel=1
 pkgbase=linux-sm8250
-_commit=3761f78fe9ddcb73a4ed73cdf01a5907533546eb
+_commit=d54d86b880a6584db26e2a0653a642d2da23c287
 _srcname=linux-${_commit}
 
 _kernelname=${pkgbase#linux}
 _desc="Qualcomm Snapdragon 865 (SM8250) 64-bit kernel (release candidate branch)"
-pkgver=${_rcver}
-#pkgver=${_rcver}
+pkgver=7.1.0
 pkgrel=1
 arch=('aarch64')
-url="http://www.kernel.org/"
+url="https://github.com/silime/linux"
 license=('GPL2')
 # LTO kernel requires lld depend
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'git')
 options=('!strip')
-source=("https://gitlab.postmarketos.org/sm8250-mainline/linux/-/archive/${_commit}/linux-${_commit}.tar.gz"
+source=("https://github.com/silime/linux/archive/${_commit}.tar.gz"
         'linux-sm8250.preset'
         'linux-sm8250.install'
         '60-linux.hook'
         '90-linux.hook'
+        '95-linux-sm8250-boot.hook'
+        'update-linux-sm8250-boot'
         'config'
 )
 
@@ -33,7 +32,9 @@ md5sums=('SKIP'
          'a46f336d5c5088d47d7fa6b0eb6b3522'
          'ce6c81ad1ad1f8b333fd6077d47abdaf'
          'a041fc9e1993593d2e5b8713a8a38b48'
-         '7d671a8bc6e7a3e67727e883edf03bf9')
+         'b1c34604c48aae3177318ee2b07542f8'
+         '926e4f87f716d0a9b70fa38d171c16b8'
+         '9465fd631f8b10b1b8d05fb0b0913791')
 
 prepare() {
   cd "${srcdir}/${_srcname}"
@@ -86,7 +87,7 @@ build() {
 
 _package() {
   pkgdesc="The Linux Kernel and modules - ${_desc}"
-  depends=('coreutils' 'kmod' 'initramfs')
+  depends=('coreutils' 'kmod' 'initramfs' 'mkbootimg' 'systemd' 'util-linux')
   optdepends=('wireless-regdb: Set the correct wireless channels of your country')
 #  provides=("linux=${pkgver}")
   install=${pkgname}.install
@@ -136,6 +137,10 @@ _package() {
    install -Dm644 /dev/stdin "${pkgdir}/usr/share/libalpm/hooks/60-${pkgbase}.hook"
  sed "${_subst}" ../90-linux.hook |
    install -Dm644 /dev/stdin "${pkgdir}/usr/share/libalpm/hooks/90-${pkgbase}.hook"
+ install -Dm644 ../95-linux-sm8250-boot.hook \
+   "${pkgdir}/usr/share/libalpm/hooks/95-${pkgbase}-boot.hook"
+ install -Dm755 ../update-linux-sm8250-boot \
+   "${pkgdir}/usr/bin/update-linux-sm8250-boot"
   # rather than use another hook (90-linux.hook) rely on mkinitcpio's 90-mkinitcpio-install.hook
   # which avoids a double run of mkinitcpio that can occur
   install -d "${pkgdir}/usr/lib/initcpio/"

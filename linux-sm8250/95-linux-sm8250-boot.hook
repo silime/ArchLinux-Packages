@@ -1,0 +1,10 @@
+[Trigger]
+Type = File
+Operation = Install
+Operation = Upgrade
+Target = boot/vmlinuz
+
+[Action]
+Description = Generating Lenovo Q706F Android boot image...
+When = PostTransaction
+Exec = /usr/bin/update-linux-sm8250-boot
