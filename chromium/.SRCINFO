@@ -1,7 +1,7 @@
 pkgbase = chromium
 	pkgdesc = A web browser built for speed, simplicity, and security
 	pkgver = 150.0.7871.124
-	pkgrel = 2
+	pkgrel = 3
 	url = https://www.chromium.org/Home
 	arch = aarch64
 	license = BSD-3-Clause
@@ -104,6 +104,7 @@ pkgbase = chromium
 	source = 0002-Fix-distcc.patch
 	source = chromium-150-v4l2-stateful-hevc-p010.patch
 	source = chromium-150-angle-p010-dmabuf-vulkan.patch
+	source = chromium-150-wayland-native-egl-gles.patch
 	sha256sums = d03a2309a7effef6ea4522ecb8bf6089adde7bb7756cd69f375d777414d8b9a7
 	sha256sums = 213e50f48b67feb4441078d50b0fd431df34323be15be97c55302d3fdac4483a
 	sha256sums = 11a96ffa21448ec4c63dd5c8d6795a1998d8e5cd5a689d91aea4d2bdd13fb06e
@@ -126,5 +127,6 @@ pkgbase = chromium
 	sha256sums = e853af57bd7e8e0ae91b1a6f963c21ca1a8e1e2eb8df9bf348b1fca12b5310c3
 	sha256sums = 4be779fd99e9c38daf890d3f0877b8baca606abda5fb1be62f7e6a2411c31516
 	sha256sums = 766c710c6a3efdcf8a01e0cc6d8184e8f0f236baa1919959d2f3a68073858a8a
+	sha256sums = b9d9eb7b6b46e6c7978d3ceecbe46626ff5ecc975083a59565f6cf599052c304
 
 pkgname = chromium

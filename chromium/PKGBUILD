@@ -16,7 +16,7 @@ buildarch=8
 
 pkgname=chromium
 pkgver=150.0.7871.124
-pkgrel=2
+pkgrel=3
 _launcher_ver=8
 _manual_clone=1
 _system_clang=1
@@ -106,7 +106,8 @@ source=(https://commondatastorage.googleapis.com/chromium-browser-official/chrom
         0001-Run-blink-bindings-generation-single-threaded.patch
         0002-Fix-distcc.patch
         chromium-150-v4l2-stateful-hevc-p010.patch
-        chromium-150-angle-p010-dmabuf-vulkan.patch)
+        chromium-150-angle-p010-dmabuf-vulkan.patch
+        chromium-150-wayland-native-egl-gles.patch)
 sha256sums=('2e2f36e3cd1ebc4ad57fd310774a5e5e9db77883d5f9374fedeaabd3c103b819'
             '213e50f48b67feb4441078d50b0fd431df34323be15be97c55302d3fdac4483a'
             '11a96ffa21448ec4c63dd5c8d6795a1998d8e5cd5a689d91aea4d2bdd13fb06e'
@@ -128,7 +129,8 @@ sha256sums=('2e2f36e3cd1ebc4ad57fd310774a5e5e9db77883d5f9374fedeaabd3c103b819'
             '113aeca23adc6641249cf3c601f89c2094b11d6e857574b8aac72e08e0f2653b'
             'e853af57bd7e8e0ae91b1a6f963c21ca1a8e1e2eb8df9bf348b1fca12b5310c3'
             '4be779fd99e9c38daf890d3f0877b8baca606abda5fb1be62f7e6a2411c31516'
-            '766c710c6a3efdcf8a01e0cc6d8184e8f0f236baa1919959d2f3a68073858a8a')
+            '766c710c6a3efdcf8a01e0cc6d8184e8f0f236baa1919959d2f3a68073858a8a'
+            'b9d9eb7b6b46e6c7978d3ceecbe46626ff5ecc975083a59565f6cf599052c304')
 
 if (( _manual_clone )); then
   source[0]=fetch-chromium-release
@@ -196,6 +198,7 @@ prepare() {
   patch -p1 -i ../0002-Fix-distcc.patch
   patch -p1 -i ../chromium-150-v4l2-stateful-hevc-p010.patch
   patch -p1 -i ../chromium-150-angle-p010-dmabuf-vulkan.patch
+  patch -p1 -i ../chromium-150-wayland-native-egl-gles.patch
   export ALARM_NINJA_JOBS="16"
   export MAKEFLAGS="-j16"
 
@@ -356,6 +359,7 @@ build() {
     'use_vaapi=false'
     'use_v4l2_codec=true'
     'use_av1_hw_decoder=true'
+    'enable_validating_command_decoder=true'
     'use_qt5=false'
     'use_qt6=true'
     'moc_qt6_path="/usr/lib/qt6"'

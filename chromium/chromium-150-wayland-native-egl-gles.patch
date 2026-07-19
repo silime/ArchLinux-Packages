@@ -1,0 +1,28 @@
+From 3c97e56e3118fef891f1dbb473758fa4f9a8f744 Mon Sep 17 00:00:00 2001
+From: chalkin <chalkin@yeah.net>
+Date: Sun, 19 Jul 2026 05:30:00 -0400
+Subject: [PATCH] ozone/wayland: allow native EGL/GLES2
+
+The Wayland GLOzone implementation already supports EGLGLES2, including
+native pixmap import through EGL_EXT_image_dma_buf_import.  Advertise it as
+an allowed implementation so --use-gl=egl can use Mesa directly instead of
+being rejected in favour of ANGLE or software GL.
+
+This is needed for zero-copy V4L2 P010 buffers on drivers where ANGLE does
+not expose the dma-buf format to Chromium.
+---
+ ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc b/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
+index 1dff29c26fdd0..44fa66b965810 100644
+--- a/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
++++ b/ui/ozone/platform/wayland/gpu/wayland_surface_factory.cc
+@@ -223,6 +223,7 @@ std::vector<gl::GLImplementationParts>
+ WaylandSurfaceFactory::GetAllowedGLImplementations() {
+   std::vector<gl::GLImplementationParts> impls;
+   if (egl_implementation_) {
++    impls.emplace_back(gl::kGLImplementationEGLGLES2);
+     impls.emplace_back(gl::ANGLEImplementation::kOpenGL);
+     impls.emplace_back(gl::ANGLEImplementation::kOpenGLES);
+     impls.emplace_back(gl::ANGLEImplementation::kSwiftShader);
