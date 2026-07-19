@@ -1,8 +1,8 @@
 diff --git a/google_apis/api_key_cache.cc b/google_apis/api_key_cache.cc
-index e8bc9bb79704..38e5d2bd005f 100644
+index bbb9420f40..690445534b 100644
 --- a/google_apis/api_key_cache.cc
 +++ b/google_apis/api_key_cache.cc
-@@ -221,14 +221,14 @@ ApiKeyCache::ApiKeyCache(const DefaultApiKeys& default_api_keys) {
+@@ -235,14 +235,14 @@ ApiKeyCache::ApiKeyCache(const DefaultApiKeys& default_api_keys) {
  
    std::string default_client_id = CalculateKeyValue(
        default_api_keys.google_default_client_id,

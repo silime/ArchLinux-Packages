@@ -28,7 +28,12 @@ export PATH+=":$PWD/depot_tools" DEPOT_TOOLS_UPDATE=0
 #export VPYTHON_BYPASS='manually managed python not supported by chrome operations'
 
 git clone -b $VERSION --depth=2 https://chromium.googlesource.com/chromium/src
-gclient sync --no-history --nohooks
+# Chromium does not publish the gperf CIPD package for linux-arm64. The
+# PKGBUILD links third_party/gperf/cipd/bin/gperf to /usr/bin/gperf instead.
+sed -i '/infra\/3pp\/tools\/gperf\/\${{platform}}/,/dep_type.*cipd/ {
+  s/host_os == "linux" and non_git_source/host_os == "linux" and host_cpu != "arm64" and non_git_source/
+}' src/DEPS
+gclient sync --no-history --nohooks -j "${GCLIENT_JOBS:-1}"
 src/build/util/lastchange.py -o src/build/util/LASTCHANGE
 src/build/util/lastchange.py -m GPU_LISTS_VERSION \
   --revision-id-only --header src/gpu/config/gpu_lists_version.h
@@ -42,5 +47,6 @@ src/tools/update_pgo_profiles.py --target=linux update \
 # https://gitlab.archlinux.org/archlinux/packaging/packages/electron32/-/issues/1
 src/third_party/node/update_npm_deps
 
+rm -rf src/third_party/node/linux/node-linux-x64/bin/
 find src/third_party/jdk/current -type f -delete
 mv src ../chromium-$VERSION

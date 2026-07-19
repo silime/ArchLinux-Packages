@@ -1,0 +1,66 @@
+From 39fdab549186670131058031eb0cf4e5ff2228ae Mon Sep 17 00:00:00 2001
+From: chalkin <chalkin@yeah.net>
+Date: Sun, 19 Jul 2026 16:20:00 +0800
+Subject: [PATCH] media: enable stateful V4L2 HEVC and linear P010 output
+
+Stateful V4L2 HEVC decoders consume complete HEVC frames and do not need the
+stateless HEVC parser path. Allow HEVC buffers through the stateful decoder,
+map the non-sliced HEVC fourcc to its profile control, and describe NV12/P010
+capture buffers with an explicit linear DRM modifier.
+
+P010 uses the same byte stride for its Y and interleaved UV planes, so include
+it in the two-plane layout derivation used by NV12.
+---
+ media/gpu/v4l2/v4l2_stateful_video_decoder.cc | 5 -----
+ media/gpu/v4l2/v4l2_utils.cc                  | 8 ++++++++
+ 2 files changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/media/gpu/v4l2/v4l2_utils.cc b/media/gpu/v4l2/v4l2_utils.cc
+--- a/media/gpu/v4l2/v4l2_utils.cc
++++ b/media/gpu/v4l2/v4l2_utils.cc
+@@ -243,6 +243,12 @@ std::optional<VideoFrameLayout> V4L2FormatToVideoFrameLayout(
+ #if BUILDFLAG(IS_LINUX)
+   if (video_fourcc == Fourcc(Fourcc::MM21)) {
+     modifiers = DRM_FORMAT_MOD_MTK_16L_32S_TILE;
++  } else if (video_fourcc == Fourcc(Fourcc::NV12) ||
++             video_fourcc == Fourcc(Fourcc::P010)) {
++    // Stateful V4L2 decoders expose these formats without a modifier API,
++    // but their output is linear.  Describing it explicitly is required by
++    // DMA-BUF importers that cannot safely infer a layout from "no modifier".
++    modifiers = DRM_FORMAT_MOD_LINEAR;
+   }
+ #endif
+   const size_t num_buffers = pix_mp.num_planes;
+@@ -278,6 +284,7 @@ std::optional<VideoFrameLayout> V4L2FormatToVideoFrameLayout(
+     const size_t y_stride_abs = static_cast<size_t>(y_stride);
+     switch (pix_fmt) {
+       case V4L2_PIX_FMT_NV12:
++      case V4L2_PIX_FMT_P010:
+         // The stride of UV is the same as Y in NV12.
+         // The height is half of Y plane.
+         planes.emplace_back(y_stride, y_stride_abs * pix_mp.height,
+@@ -336,6 +343,7 @@ static const std::map<v4l2_enum_type, v4l2_enum_type>
+         {V4L2_PIX_FMT_H264, V4L2_CID_MPEG_VIDEO_H264_PROFILE},
+         {V4L2_PIX_FMT_H264_SLICE, V4L2_CID_MPEG_VIDEO_H264_PROFILE},
+ #if BUILDFLAG(ENABLE_HEVC_PARSER_AND_HW_DECODER)
++        {V4L2_PIX_FMT_HEVC, V4L2_CID_MPEG_VIDEO_HEVC_PROFILE},
+         {V4L2_PIX_FMT_HEVC_SLICE, V4L2_CID_MPEG_VIDEO_HEVC_PROFILE},
+ #endif  // BUILDFLAG(ENABLE_HEVC_PARSER_AND_HW_DECODER)
+         {V4L2_PIX_FMT_VP8, V4L2_CID_MPEG_VIDEO_VP8_PROFILE},
+diff --git a/media/gpu/v4l2/v4l2_stateful_video_decoder.cc b/media/gpu/v4l2/v4l2_stateful_video_decoder.cc
+--- a/media/gpu/v4l2/v4l2_stateful_video_decoder.cc
++++ b/media/gpu/v4l2/v4l2_stateful_video_decoder.cc
+@@ -508,11 +508,6 @@ void V4L2StatefulVideoDecoder::Decode(scoped_refptr<DecoderBuffer> buffer,
+       decoder_buffer_and_callbacks_.push(std::move(a));
+     }
+ 
+-  } else if (VideoCodecProfileToVideoCodec(config_.profile()) ==
+-             VideoCodec::kHEVC) {
+-    NOTIMPLEMENTED();
+-    std::move(decode_cb).Run(DecoderStatus::Codes::kUnsupportedCodec);
+-    return;
+   } else {
+     decoder_buffer_and_callbacks_.emplace(std::move(buffer),
+                                           std::move(decode_cb));
+-- 
+2.50.1

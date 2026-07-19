@@ -1,0 +1,31 @@
+From 160521475493c9a98fccd758fc2537b5834888ef Mon Sep 17 00:00:00 2001
+From: chalkin <chalkin@yeah.net>
+Date: Sun, 19 Jul 2026 16:21:00 +0800
+Subject: [PATCH] ANGLE: map DRM P010 to Vulkan two-plane 4:2:0
+
+DRM_FORMAT_P010 is already recognized as a YUV EGL image, but the Vulkan
+DMA-BUF path has no corresponding VkFormat. This leaves the candidate list
+empty and makes DmaBufImageSiblingVkLinux fail with
+VK_ERROR_FEATURE_NOT_PRESENT.
+
+Map P010 to its matching two-plane 10-bit 4:2:0 Vulkan format. Do not use the
+single-plane packed 4:2:2 formats, which describe a different memory layout.
+---
+ third_party/angle/src/common/linux/dma_buf_utils.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/third_party/angle/src/common/linux/dma_buf_utils.cpp b/third_party/angle/src/common/linux/dma_buf_utils.cpp
+--- a/third_party/angle/src/common/linux/dma_buf_utils.cpp
++++ b/third_party/angle/src/common/linux/dma_buf_utils.cpp
+@@ -148,6 +148,8 @@ std::vector<VkFormat> DrmFourCCFormatToVkFormats(int fourccFormat)
+             return {VK_FORMAT_B5G6R5_UNORM_PACK16};
+         case DRM_FORMAT_NV12:
+             return {VK_FORMAT_G8_B8R8_2PLANE_420_UNORM};
++        case DRM_FORMAT_P010:
++            return {VK_FORMAT_G10X6_B10X6R10X6_2PLANE_420_UNORM_3PACK16};
+         default:
+             WARN() << "Unknown dma_buf format " << fourccFormat
+                    << " used to initialize an EGL image.";
+-- 
+2.50.1
+
