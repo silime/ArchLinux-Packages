@@ -157,11 +157,17 @@ jobs:
       run: |
         ${{ env.BUILD_ALARM_SH }} 'repo-add -s -v -n ${{ env.REPO_NAME }}.db.tar.xz *.pkg.tar.xz'
 
+    - name: Pack repository artifact
+      run: |
+        tar --create --file "/tmp/${{ env.REPO_NAME }}-repository.tar" \
+          --directory /home/alarm --exclude='./.*' .
+
     - name: Upload repository
       uses: actions/upload-artifact@v7
       with:
         name: ${{ env.REPO_NAME }}
-        path: /home/alarm/*
+        path: /tmp/${{ env.REPO_NAME }}-repository.tar
+        compression-level: 0
     
     - name: Set variables
       run: |
