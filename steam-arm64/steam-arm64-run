@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+steam="${STEAM_DIR:-$HOME/.local/share/Steam}"
+export FEX_ROOTFS=ArchLinux
+export FEX_APP_DATA_LOCATION="${FEX_APP_DATA_LOCATION:-$HOME/.fex-emu}"
+exec env LD_LIBRARY_PATH="$steam/lib/aarch64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$steam/steamrtarm64/steam" -steamdeck "$@"

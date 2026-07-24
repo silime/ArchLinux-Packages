@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+[[ $EUID -ne 0 ]] || { echo 'Run as normal user.' >&2; exit 1; }
+data="${FEX_APP_DATA_LOCATION:-$HOME/.fex-emu}"
+root="$data/RootFS/ArchLinux"
+mkdir -p "$data/RootFS"
+if [[ ! -d "$root/usr" ]]; then
+  tmp="${root}.tmp.$$"; rm -rf "$tmp"
+  unsquashfs -f -d "$tmp" /usr/share/fex-emu/RootFS/ArchLinux.sqsh
+  mv "$tmp" "$root"
+fi
+cfg="$data/Config.json"
+if [[ -s "$cfg" ]] && jq empty "$cfg" >/dev/null 2>&1; then
+  jq '.Config=(.Config//{}) | .Config.RootFS="ArchLinux"' "$cfg" > "$cfg.tmp"
+  mv "$cfg.tmp" "$cfg"
+else
+  printf '%s\n' '{"Config":{"RootFS":"ArchLinux"}}' > "$cfg"
+fi
+printf 'FEX RootFS ready: %s\n' "$root"

@@ -1,0 +1,13 @@
+pkgname=proton-ge-arm64
+pkgver=11.1
+pkgrel=1
+pkgdesc='GE-Proton build for ARM64 Steam'
+arch=('aarch64')
+url='https://github.com/GloriousEggroll/proton-ge-custom'
+license=('BSD-3-Clause')
+source=('proton.tar.gz::https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton11-1/GE-Proton11-1-aarch64.tar.gz')
+sha256sums=('SKIP')
+package() {
+  install -d "$pkgdir/usr/share/steam/compatibilitytools.d"
+  bsdtar -xpf "$srcdir/proton.tar.gz" -C "$pkgdir/usr/share/steam/compatibilitytools.d"
+}

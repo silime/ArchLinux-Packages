@@ -1,0 +1,14 @@
+pkgname=proton-cachyos-arm64
+pkgver=11.0.20260702
+pkgrel=1
+pkgdesc='CachyOS Proton build for ARM64 Steam'
+arch=('aarch64')
+url='https://github.com/CachyOS/proton-cachyos'
+license=('BSD-3-Clause')
+source=('proton.tar.xz::https://github.com/CachyOS/proton-cachyos/releases/download/cachyos-11.0-20260702-slr/proton-cachyos-11.0-20260702-slr-arm64.tar.xz')
+sha256sums=('SKIP')
+package() {
+  install -d "$pkgdir/usr/share/steam/compatibilitytools.d"
+  bsdtar -xpf "$srcdir/proton.tar.xz" -C "$pkgdir/usr/share/steam/compatibilitytools.d"
+  find "$pkgdir/usr/share/steam/compatibilitytools.d" -name toolmanifest.vdf -exec sed -i '/require_tool_appid/d' {} +
+}

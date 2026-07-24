@@ -1,0 +1,23 @@
+pkgname=fex-rootfs-archlinux
+pkgver=2026.01.08
+pkgrel=1
+pkgdesc='Reusable Arch Linux x86_64 RootFS for FEX-Emu'
+arch=('any')
+url='https://rootfs.fex-emu.gg/'
+license=('custom')
+depends=('fex-emu' 'jq' 'squashfs-tools')
+makedepends=('xxhash')
+source=('ArchLinux.sqsh::https://rootfs.fex-emu.gg/ArchLinux/2026-01-08/ArchLinux.sqsh'
+        'fex-rootfs-archlinux-setup')
+sha256sums=('SKIP' 'SKIP')
+
+prepare() {
+  local hash
+  hash="$(xxhsum -H1 "$srcdir/ArchLinux.sqsh" | awk '{print $1}')"
+  [[ "$hash" == c456356f870fe98f ]] || return 1
+}
+
+package() {
+  install -Dm644 "$srcdir/ArchLinux.sqsh" "$pkgdir/usr/share/fex-emu/RootFS/ArchLinux.sqsh"
+  install -Dm755 "$srcdir/fex-rootfs-archlinux-setup" "$pkgdir/usr/bin/fex-rootfs-archlinux-setup"
+}

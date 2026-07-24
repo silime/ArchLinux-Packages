@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Steam ARM64
+Exec=steam-arm64-run
+Icon=steam
+Type=Application
+Categories=Game;
+Terminal=false

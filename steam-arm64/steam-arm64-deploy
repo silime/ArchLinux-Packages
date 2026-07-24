@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+[[ $EUID -ne 0 ]] || { echo 'Run as normal user.' >&2; exit 1; }
+fex-rootfs-archlinux-setup
+steam="${STEAM_DIR:-$HOME/.local/share/Steam}"
+mkdir -p "$steam" "$HOME/.steam" "$steam/compatibilitytools.d"
+cp -a /opt/steam-arm64/. "$steam/"
+for d in /usr/share/steam/compatibilitytools.d/*; do [[ -d "$d" ]] && cp -a "$d" "$steam/compatibilitytools.d/"; done
+mkdir -p "$steam/package"; printf '%s\n' publicbeta > "$steam/package/beta"
+ln -sfn "$steam" "$HOME/.steam/steam"
+ln -sfn "$steam/linuxarm64" "$HOME/.steam/sdkarm64"
+printf 'Steam deployed to %s\n' "$steam"

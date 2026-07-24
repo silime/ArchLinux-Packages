@@ -1,0 +1,29 @@
+pkgname=steam-arm64
+pkgver=1
+pkgrel=1
+pkgdesc='Valve ARM64 Steam client and runtime for FEX based systems'
+arch=('aarch64')
+url='https://repo.steampowered.com/'
+license=('custom')
+depends=('fex-emu' 'fex-rootfs-archlinux' 'bash')
+makedepends=('curl' 'unzip' 'libarchive' 'binutils')
+source=('steam-runtime.tar.xz::https://repo.steampowered.com/steamrt3c/images/latest-public-beta/steam-runtime-steamrt-arm64.tar.xz'
+        'steam-arm64-deploy' 'steam-arm64-run' 'steam-arm64.desktop')
+sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+
+prepare() {
+  local manifest file
+  manifest="$(curl -fL https://client-update.fastly.steamstatic.com/steam_client_publicbeta_linuxarm64 | strings)"
+  file="$(grep -oP 'bins_linuxarm64_linuxarm64\.zip\.(?!vz\.)[^"[:space:]]+' <<<"$manifest" | head -n1)"
+  [[ -n "$file" ]]
+  curl -fL -o "$srcdir/steam-linuxarm64.zip" "https://client-update.steamstatic.com/$file"
+}
+
+package() {
+  install -d "$pkgdir/opt/steam-arm64"
+  bsdtar -xpf "$srcdir/steam-runtime.tar.xz" -C "$pkgdir/opt/steam-arm64"
+  unzip -oq "$srcdir/steam-linuxarm64.zip" -d "$pkgdir/opt/steam-arm64"
+  install -Dm755 "$srcdir/steam-arm64-deploy" "$pkgdir/usr/bin/steam-arm64-deploy"
+  install -Dm755 "$srcdir/steam-arm64-run" "$pkgdir/usr/bin/steam-arm64-run"
+  install -Dm644 "$srcdir/steam-arm64.desktop" "$pkgdir/usr/share/applications/steam-arm64.desktop"
+}
