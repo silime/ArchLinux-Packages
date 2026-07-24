@@ -1,6 +1,6 @@
 pkgname=fex-rootfs-archlinux
 pkgver=2026.01.08
-pkgrel=2
+pkgrel=3
 pkgdesc='Reusable Arch Linux x86_64 RootFS for FEX-Emu'
 arch=('any')
 url='https://rootfs.fex-emu.gg/'
@@ -14,6 +14,11 @@ sha256sums=('SKIP' 'SKIP')
 prepare() {
   local hash
   hash="$(xxhsum -H3 "$srcdir/ArchLinux.sqsh" | awk '{print $1}')" || return 1
+
+  # xxhsum -H3 currently prints the first field as XXH3_<16-hex-hash>.
+  # Keep this compatible with versions that print the bare hash.
+  hash="${hash##*_}"
+
   if [[ "${hash,,}" != c456356f870fe98f ]]; then
     printf 'ERROR: ArchLinux.sqsh XXH3-64 mismatch: expected=%s actual=%s\n' \
       c456356f870fe98f "$hash" >&2

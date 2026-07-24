@@ -1,28 +1,132 @@
 pkgname=steam-arm64
-pkgver=1
-pkgrel=2
+pkgver=3.0.20260618.246540
+pkgrel=1
 pkgdesc='Valve ARM64 Steam client and runtime for FEX based systems'
 arch=('aarch64')
 url='https://repo.steampowered.com/'
 license=('custom')
 depends=('fex-emu' 'fex-rootfs-archlinux' 'bash')
 makedepends=('curl' 'unzip' 'libarchive' 'binutils')
-source=('steam-runtime.tar.xz::https://repo.steampowered.com/steamrt3c/images/latest-public-stable/steam-runtime-steamrt-arm64.tar.xz'
-        'steam-arm64-deploy' 'steam-arm64-run' 'steam-arm64.desktop')
-sha256sums=('SKIP' 'SKIP' 'SKIP' 'SKIP')
+source=('steam-arm64-deploy' 'steam-arm64-run' 'steam-arm64.desktop')
+sha256sums=('SKIP' 'SKIP' 'SKIP')
+
+_runtime_base='https://repo.steampowered.com/steamrt3c/images'
+_runtime_archive='com.valvesoftware.SteamRuntime.Platform-arm64-steamrt3c-runtime.tar.gz'
+_steam_manifest_url='https://client-update.fastly.steamstatic.com/steam_client_publicbeta_linuxarm64'
+_steam_cdn='https://client-update.steamstatic.com'
 
 prepare() {
+  local -a curl_args=(
+    --fail
+    --location
+    --retry 5
+    --retry-all-errors
+    --connect-timeout 30
+  )
+  local runtime_version runtime_url sums_url runtime_hash
   local manifest file
-  manifest="$(curl --fail --location --retry 5 --retry-all-errors https://client-update.fastly.steamstatic.com/steam_client_publicbeta_linuxarm64 | strings)"
+
+  runtime_version="$(curl "${curl_args[@]}" "${_runtime_base}/latest-public-stable.txt")" || return 1
+  runtime_version="${runtime_version//$'\r'/}"
+  runtime_version="${runtime_version//$'\n'/}"
+
+  if [[ ! "$runtime_version" =~ ^3c\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    printf 'ERROR: Invalid steamrt3c stable version: %s\n' "$runtime_version" >&2
+    return 1
+  fi
+
+  runtime_url="${_runtime_base}/${runtime_version}/${_runtime_archive}"
+  sums_url="${_runtime_base}/${runtime_version}/SHA256SUMS"
+
+  printf 'Downloading Steam Runtime ARM64 %s\n' "$runtime_version"
+  curl "${curl_args[@]}" -o "$srcdir/$_runtime_archive" "$runtime_url" || return 1
+  curl "${curl_args[@]}" -o "$srcdir/SHA256SUMS" "$sums_url" || return 1
+
+  runtime_hash="$(
+    awk -v file="$_runtime_archive" '
+      {
+        name=$2
+        sub(/^\*/, "", name)
+        sub(/^\.\//, "", name)
+        if (name == file) {
+          print $1
+          exit
+        }
+      }
+    ' "$srcdir/SHA256SUMS"
+  )"
+
+  if [[ ! "$runtime_hash" =~ ^[[:xdigit:]]{64}$ ]]; then
+    printf 'ERROR: Could not find %s in SHA256SUMS\n' "$_runtime_archive" >&2
+    return 1
+  fi
+
+  (
+    cd "$srcdir"
+    printf '%s  %s\n' "$runtime_hash" "$_runtime_archive" | sha256sum --check --strict -
+  ) || return 1
+
+  printf '%s\n' "$runtime_version" > "$srcdir/steam-runtime.version"
+
+  manifest="$(curl "${curl_args[@]}" "$_steam_manifest_url" | strings)" || return 1
   file="$(grep -oP 'bins_linuxarm64_linuxarm64\.zip\.(?!vz\.)[^"[:space:]]+' <<<"$manifest" | head -n1)"
-  [[ -n "$file" ]]
-  curl --fail --location --retry 5 --retry-all-errors -o "$srcdir/steam-linuxarm64.zip" "https://client-update.steamstatic.com/$file"
+  if [[ -z "$file" ]]; then
+    printf 'ERROR: Unable to locate the ARM64 Steam client archive in the manifest.\n' >&2
+    return 1
+  fi
+
+  curl "${curl_args[@]}" -o "$srcdir/steam-linuxarm64.zip" "${_steam_cdn}/${file}" || return 1
+  unzip -tq "$srcdir/steam-linuxarm64.zip" >/dev/null || return 1
+}
+
+pkgver() {
+  local runtime_version
+  runtime_version="$(<"$srcdir/steam-runtime.version")"
+  printf '%s\n' "${runtime_version/3c./3.}"
 }
 
 package() {
-  install -d "$pkgdir/opt/steam-arm64"
-  bsdtar -xpf "$srcdir/steam-runtime.tar.xz" -C "$pkgdir/opt/steam-arm64"
+  local runtime_version runtime_root client
+  local ibus_target ibus_link_dir relative_target
+
+  runtime_version="$(<"$srcdir/steam-runtime.version")"
+  runtime_root="$pkgdir/opt/steam-arm64/steam-runtime-steamrt-arm64/steamrt3c_platform_${runtime_version}"
+
+  install -d "$runtime_root"
+  bsdtar -xpf "$srcdir/$_runtime_archive" -C "$runtime_root"
+
+  if [[ ! -d "$runtime_root/files" ]]; then
+    printf 'ERROR: Steam Runtime archive does not contain the expected files/ directory.\n' >&2
+    return 1
+  fi
+
   unzip -oq "$srcdir/steam-linuxarm64.zip" -d "$pkgdir/opt/steam-arm64"
+
+  client="$pkgdir/opt/steam-arm64/steamrtarm64/steam"
+  if [[ ! -f "$client" ]]; then
+    printf 'ERROR: ARM64 Steam client was not found at %s\n' "$client" >&2
+    return 1
+  fi
+  chmod 755 "$client"
+
+  install -d "$pkgdir/opt/steam-arm64/package"
+  printf '%s\n' publicbeta > "$pkgdir/opt/steam-arm64/package/beta"
+
+  ibus_target="$(
+    find "$runtime_root/files/lib/aarch64-linux-gnu" -maxdepth 1 \
+      \( -type f -o -type l \) -name 'libibus-1.0.so.5.*' -print -quit
+  )"
+
+  if [[ -z "$ibus_target" ]]; then
+    printf 'ERROR: libibus-1.0.so.5 was not found in the ARM64 Steam Runtime.\n' >&2
+    return 1
+  fi
+
+  ibus_link_dir="$pkgdir/opt/steam-arm64/lib/aarch64-linux-gnu"
+  install -d "$ibus_link_dir"
+  relative_target="$(realpath --relative-to="$ibus_link_dir" "$ibus_target")"
+  ln -s "$relative_target" "$ibus_link_dir/libibus-1.0.so.5"
+
   install -Dm755 "$srcdir/steam-arm64-deploy" "$pkgdir/usr/bin/steam-arm64-deploy"
   install -Dm755 "$srcdir/steam-arm64-run" "$pkgdir/usr/bin/steam-arm64-run"
   install -Dm644 "$srcdir/steam-arm64.desktop" "$pkgdir/usr/share/applications/steam-arm64.desktop"
