@@ -21,6 +21,7 @@ jobs:
     env: 
       BUILD_ALARM_SH: 'sudo su - alarm -c'
     strategy:
+      fail-fast: false
       matrix:
         package: [
             'q6voiced',
@@ -38,7 +39,11 @@ jobs:
             'linux-sm8250',
             'mesa',
             'sensors/hexagonrpcd',
-            'tinyalsa-git'
+            'tinyalsa-git',
+            'fex-rootfs-archlinux',
+            'proton-cachyos-arm64',
+            'proton-ge-arm64',
+            'steam-arm64'
         ]
     
     steps:
@@ -49,7 +54,7 @@ jobs:
         pacman-key --init && pacman-key --populate archlinuxarm
         pacman-key --recv-keys F60FD4C6D426DAB6
         pacman-key --lsign F60FD4C6D426DAB6
-        pacman -Syyu --noconfirm  --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc ccache meson libqmi protobuf-c glib2
+        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc ccache meson libqmi protobuf-c glib2 curl jq squashfs-tools xxhash unzip libarchive
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
@@ -80,7 +85,19 @@ jobs:
         echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g') >> $GITHUB_ENV
 
         cp -a ./. /home/alarm/
-        ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
+
+        case "${{ matrix.package }}" in
+          fex-rootfs-archlinux|proton-cachyos-arm64|proton-ge-arm64|steam-arm64)
+            # These packages only need their declared runtime dependencies after
+            # installation. Their build tools were installed explicitly above.
+            # Building with --nodeps lets the reusable FEX packages bootstrap
+            # before fex-emu and the sibling packages exist in this repository.
+            ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --nodeps --noconfirm)'
+            ;;
+          *)
+            ${{ env.BUILD_ALARM_SH }} '(makepkg --cleanbuild --syncdeps --noconfirm)'
+            ;;
+        esac
 
     - name: Pack package artifacts
       run: |
