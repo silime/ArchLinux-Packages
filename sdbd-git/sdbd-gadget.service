@@ -7,10 +7,9 @@ Conflicts=shutdown.target
 PartOf=sdbd.service
 
 [Service]
-Type=oneshot
+Type=simple
 ExecStart=/usr/local/sbin/sdbd-gadget
-RemainAfterExit=yes
-ExecStop=/bin/sh -c 'printf "\\n" > /sys/kernel/config/usb_gadget/sdbd/UDC 2>/dev/null || true'
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
