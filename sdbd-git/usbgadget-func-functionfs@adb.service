@@ -1,0 +1,15 @@
+[Unit]
+Description=ADB FunctionFS function
+PartOf=sdbd.service
+Before=dev-usb\x2dffs-adb.mount
+After=modprobe@fs-functionfs.service
+Wants=modprobe@fs-functionfs.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/usbgadget-func-functionfs adb
+ExecStop=/usr/local/sbin/usbgadget-func-functionfs-stop adb
+
+[Install]
+WantedBy=usb-gadget.target

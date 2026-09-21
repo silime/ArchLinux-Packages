@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+gadget=/sys/kernel/config/usb_gadget/sdbd
+mountpoint -q /sys/kernel/config || mount -t configfs configfs /sys/kernel/config
+mkdir -p "$gadget" "$gadget/strings/0x409" "$gadget/configs/c.1/strings/0x409"
+printf '0x18d1\n' > "$gadget/idVendor"
+printf '0x4ee7\n' > "$gadget/idProduct"
+printf '0x0300\n' > "$gadget/bcdUSB"
+printf '0x0100\n' > "$gadget/bcdDevice"
+serial=$(cat /proc/sys/kernel/hostname 2>/dev/null || true)
+[ -n "$serial" ] || serial=$(cat /etc/hostname 2>/dev/null || true)
+[ -n "$serial" ] || serial=sdbd
+printf '%s\n' "$serial" > "$gadget/strings/0x409/serialnumber"
+printf 'Openbfdev\n' > "$gadget/strings/0x409/manufacturer"
+printf 'SDBD\n' > "$gadget/strings/0x409/product"
+printf 'ADB\n' > "$gadget/configs/c.1/strings/0x409/configuration"
+printf '500\n' > "$gadget/configs/c.1/MaxPower"
+mkdir -p "$gadget/functions/ffs.adb"
+[ -e "$gadget/configs/c.1/ffs.adb" ] || ln -s "$gadget/functions/ffs.adb" "$gadget/configs/c.1/ffs.adb"
+udc=$(ls /sys/class/udc | head -n 1 || true)
+[ -n "$udc" ] || exit 0
+current=$(cat "$gadget/UDC" 2>/dev/null || true)
+[ -z "$current" ] || [ "$current" = "$udc" ] || { printf '\n' > "$gadget/UDC"; sleep 0.2; }
+printf '%s\n' "$udc" > "$gadget/UDC"
+echo "Bound SDBD gadget to UDC $udc"

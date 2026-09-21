@@ -2,6 +2,7 @@
 Description=Simple Debug Bridge Server
 RequiresMountsFor=/dev/usb-ffs/adb
 Before=gadget-start.service
+Wants=sdbd-gadget.service
 
 [Service]
 Type=simple
@@ -15,4 +16,3 @@ RestartSec=10
 [Install]
 Also=dev-usb\\x2dffs-adb.mount
 RequiredBy=gadget-start.service
-WantedBy=usb-gadget.target

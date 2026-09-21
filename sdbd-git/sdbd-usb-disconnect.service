@@ -1,0 +1,6 @@
+[Unit]
+Description=Stop SDBD when the USB debug partner is disconnected
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl stop sdbd.service

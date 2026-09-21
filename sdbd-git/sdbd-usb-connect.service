@@ -1,0 +1,6 @@
+[Unit]
+Description=Start SDBD when a USB debug partner is connected
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl start sdbd.service

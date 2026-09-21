@@ -18,11 +18,27 @@ conflicts=('sdbd' 'adbd')
 source=("${_gitname}::git+${url}.git#branch=devel"
         'adbd'
         'sdbd.service'
-        'dev-usb-ffs-adb.mount')
+        'dev-usb-ffs-adb.mount'
+        'sdbd-gadget'
+        'sdbd-gadget.service'
+        'usbgadget-func-functionfs'
+        'usbgadget-func-functionfs-stop'
+        'usbgadget-func-functionfs@adb.service'
+        '99-sdbd-usb.rules'
+        'sdbd-usb-connect.service'
+        'sdbd-usb-disconnect.service')
 sha256sums=('SKIP'
             '2400b8efaa974507f837f9e683a34926e0e3dfc4784d32fec5ef9389e6dd2b5d'
-            'bb7724c9679d6732da2d043de19bf0860a016d4d3be5dc22ae82ed9388194197'
-            '4c42a02197f868335ba1c613ffd8388dc40f019b372acf3936c0a01496b3f649')
+            '05aeff5872f5d1fbda5073f6217614462335b05127fa5e685135df53a9fe20e6'
+            '4c42a02197f868335ba1c613ffd8388dc40f019b372acf3936c0a01496b3f649'
+            '80bd32ab44a3946cdd675a6affc4fb5b65db856079efb1eb1f8a43c85ba75e05'
+            'f3d1d7cf8c5f66dbe5cec319566d0114d0fea1052426c1b2accdea6649cb2b24'
+            '15f29af452112fdd5815df82551ec17139aecc542488e342633962aecc6ab0ce'
+            'f99b9238f9828359e16d75ed8a5d3ebfe317fb5e6149aeb0a87adc114fabb177'
+            '3456a83f4794a2e3506203f4c610202bf919cc258de31d5bac7efb1cabdc6b52'
+            'ed95b0b2105d6b218d3c65f5d217d73e246d3c7d0f00d6da5a80897d2f58ffea'
+            'b81ce4b9014e78fb8a550329c9d1fb9813e0493bf1c7a8da9e327ffe9e8b7238'
+            '4171a9bb55f6a0bafcdc011712dd65fcd9261071bf2b4c489a2df1f9906decdb')
 
 pkgver() {
   cd "${srcdir}/${_gitname}"
@@ -39,6 +55,17 @@ package() {
   install -Dm644 "${srcdir}/sdbd.service" "${pkgdir}/usr/lib/systemd/system/sdbd.service"
   install -Dm644 "${srcdir}/dev-usb-ffs-adb.mount" \
     "${pkgdir}/usr/lib/systemd/system/dev-usb\\x2dffs-adb.mount"
+  install -Dm755 "${srcdir}/sdbd-gadget" "${pkgdir}/usr/local/sbin/sdbd-gadget"
+  install -Dm755 "${srcdir}/usbgadget-func-functionfs" "${pkgdir}/usr/local/sbin/usbgadget-func-functionfs"
+  install -Dm755 "${srcdir}/usbgadget-func-functionfs-stop" "${pkgdir}/usr/local/sbin/usbgadget-func-functionfs-stop"
+  install -Dm644 "${srcdir}/sdbd-gadget.service" "${pkgdir}/usr/lib/systemd/system/sdbd-gadget.service"
+  install -Dm644 "${srcdir}/usbgadget-func-functionfs@adb.service" \
+    "${pkgdir}/usr/lib/systemd/system/usbgadget-func-functionfs@adb.service"
+  install -Dm644 "${srcdir}/99-sdbd-usb.rules" "${pkgdir}/usr/lib/udev/rules.d/99-sdbd-usb.rules"
+  install -Dm644 "${srcdir}/sdbd-usb-connect.service" \
+    "${pkgdir}/usr/lib/systemd/system/sdbd-usb-connect.service"
+  install -Dm644 "${srcdir}/sdbd-usb-disconnect.service" \
+    "${pkgdir}/usr/lib/systemd/system/sdbd-usb-disconnect.service"
   ln -s sdbd.service "${pkgdir}/usr/lib/systemd/system/adbd.service"
   ln -s sdbd.service "${pkgdir}/usr/lib/systemd/system/adbd-usb.service"
 }

@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+
+name=${1:-adb}
+gadget=/sys/kernel/config/usb_gadget/sdbd
+config=$gadget/configs/c.1
+
+mountpoint -q /sys/kernel/config || mount -t configfs configfs /sys/kernel/config
+
+mkdir -p "$gadget" "$gadget/strings/0x409" "$config/strings/0x409"
+
+mkdir -p "$gadget/functions/ffs.$name"
+[ -e "$config/ffs.$name" ] || ln -s "$gadget/functions/ffs.$name" "$config/ffs.$name"

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+name=${1:-adb}
+gadget=/sys/kernel/config/usb_gadget/sdbd
+config=$gadget/configs/c.1
+
+[ -e "$config/ffs.$name" ] && rm -f "$config/ffs.$name"
+[ -e "$config/$name" ] && rm -f "$config/$name"
+rmdir "$gadget/functions/ffs.$name" 2>/dev/null || true
