@@ -14,8 +14,52 @@ env:
   CHROMIUM_PACKAGE_SHA256: ab9b71b7cbee5717de67d87214aae6797a16ba3ba3a9cf5faa6c5b65b3efd4cc
 
 jobs:
+  changes:
+    name: Detect changed packages
+    runs-on: ubuntu-22.04
+    outputs:
+      packages: ${{ steps.packages.outputs.packages }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Select packages
+      id: packages
+      shell: bash
+      run: |
+        mapfile -t all_packages < <(
+          find . -type f -name PKGBUILD -printf '%h\n' | sed 's#^./##' | sort |
+          while read -r package; do
+            case "$package" in
+              chromium|makepkg-aarch64) ;;
+              *) printf '%s\n' "$package" ;;
+            esac
+          done
+        )
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+          printf '%s\n' "${all_packages[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' > packages.json
+        else
+          mapfile -t changed_files < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
+          changed=()
+          for package in "${all_packages[@]}"; do
+            for file in "${changed_files[@]}"; do
+              if [[ "$file" == "$package"/* ]]; then
+                changed+=("$package")
+                break
+              fi
+            done
+          done
+          printf '%s\n' "${changed[@]}" | jq -Rsc 'split("\n") | map(select(length > 0)) | unique' > packages.json
+        fi
+        packages=$(<packages.json)
+        echo "Changed packages: ${packages}"
+        echo "packages=${packages}" >> "$GITHUB_OUTPUT"
+
   build-packages:
     name: Build Package (${{ matrix.package }})
+    needs: changes
+    if: needs.changes.outputs.packages != '[]'
     runs-on: ubuntu-22.04-arm
     container: menci/archlinuxarm
     env: 
@@ -23,31 +67,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package: [
-            'q6voiced',
-            'soc-qcom-sdm845',
-            'persistent-mac',
-            'linux-firmware',
-            'qbootctl',
-            'bootmac',
-            'alsa-ucm-oneplus',
-            'device-oneplus-fajita',
-            'device-lenovo-q706f',
-            'mkbootimg',
-            'linux-firmware-lenovo-sm8250',
-            'linux-sdm845',
-            'linux-sm8250',
-            'mesa',
-            'sensors/hexagonrpcd',
-            'tinyalsa-git',
-            'bfdev-git',
-            'fbenv-git',
-            'sdbd-git',
-            'fex-rootfs-archlinux',
-            'proton-cachyos-arm64',
-            'proton-ge-arm64',
-            'steam-arm64'
-        ]
+        package: ${{ fromJSON(needs.changes.outputs.packages) }}
     
     steps:
 
@@ -57,7 +77,7 @@ jobs:
         pacman-key --init && pacman-key --populate archlinuxarm
         pacman-key --recv-keys F60FD4C6D426DAB6
         pacman-key --lsign F60FD4C6D426DAB6
-        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git cmake gcc bc distcc ccache meson libqmi protobuf-c glib2 curl jq squashfs-tools xxhash unzip libarchive
+        pacman --disable-download-timeout -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git cmake gcc bc distcc ccache meson libqmi protobuf-c glib2 curl jq squashfs-tools xxhash unzip libarchive
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
@@ -144,7 +164,8 @@ jobs:
   create-repository:
     name: Create Repository
     runs-on: ubuntu-22.04-arm
-    needs: build-packages
+    needs: [changes, build-packages]
+    if: needs.changes.outputs.packages != '[]'
     container: menci/archlinuxarm
     env: 
       BUILD_ALARM_SH: 'sudo su - alarm -c'
@@ -160,7 +181,7 @@ jobs:
         mkdir -p ${{ env.REPO_DIR }}
         # GitHub's job container cannot create pacman's Landlock sandbox.
         # Disable it only inside this already-isolated CI container.
-        pacman --disable-sandbox -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc curl
+        pacman --disable-sandbox --disable-download-timeout -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc curl jq
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
@@ -171,11 +192,30 @@ jobs:
           -exec tar --extract --file {} --directory "${{ env.REPO_DIR }}" \;
     - name: Download prebuilt Chromium package
       run: |
-        curl --fail --location --retry 5 --retry-all-errors \
-          --output "${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" \
-          "${{ env.CHROMIUM_PACKAGE_URL }}"
+        if [[ ! -f "${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" ]]; then
+          curl --fail --location --retry 5 --retry-all-errors \
+            --output "${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" \
+            "${{ env.CHROMIUM_PACKAGE_URL }}"
+        fi
         echo "${{ env.CHROMIUM_PACKAGE_SHA256 }}  ${{ env.REPO_DIR }}/${{ env.CHROMIUM_PACKAGE }}" \
           | sha256sum --check --strict -
+    - name: Download packages from previous release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        release_json=$(curl --fail --location --retry 5 --retry-all-errors \
+          -H "Authorization: Bearer ${GH_TOKEN}" \
+          -H 'Accept: application/vnd.github+json' \
+          "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases?per_page=1")
+        mapfile -t package_urls < <(jq -r '.[] | .assets[]? | select(.name | test("\\.pkg\\.tar\\.")) | .browser_download_url' <<< "${release_json}")
+        for url in "${package_urls[@]}"; do
+          [[ -n "$url" ]] || continue
+          curl --fail --location --retry 5 --retry-all-errors \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            --output "${{ env.REPO_DIR }}/$(basename "$url")" "$url"
+        done
+        find "${{ env.REPO_DIR }}" -maxdepth 1 -type f \
+          \( -name '*.db*' -o -name '*.files*' -o -name '*.sig' \) -delete
     - name: Setup GPG
       run: |
         # Import the GPG private key
@@ -214,7 +254,7 @@ jobs:
     
     - name: Set variables
       run: |
-        echo RELEASE=$(date +%Y\/%m\/%d) >> $GITHUB_ENV
+        echo RELEASE=$(date +%Y\/%m\/%d)-${GITHUB_RUN_NUMBER} >> $GITHUB_ENV
       shell: bash
 
     - name: create release
