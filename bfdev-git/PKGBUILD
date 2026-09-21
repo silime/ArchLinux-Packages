@@ -5,7 +5,7 @@
 pkgname=bfdev-git
 _gitname=bfdev
 pkgver=r1340.3e6e094
-pkgrel=1
+pkgrel=2
 pkgdesc='Portable infrastructure and data-structure library'
 arch=('aarch64')
 url='https://github.com/silime/bfdev'

@@ -5,7 +5,7 @@
 pkgname=fbenv-git
 _gitname=fbenv
 pkgver=r1.ae74124
-pkgrel=1
+pkgrel=2
 pkgdesc='System utility functions library based on bfdev'
 arch=('aarch64')
 url='https://github.com/silime/fbenv'

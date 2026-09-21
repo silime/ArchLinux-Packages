@@ -5,7 +5,7 @@
 pkgname=sdbd-git
 _gitname=sdbd
 pkgver=r4.a591743
-pkgrel=1
+pkgrel=2
 pkgdesc='Simple Debug Bridge daemon'
 arch=('aarch64')
 url='https://github.com/silime/sdbd'
