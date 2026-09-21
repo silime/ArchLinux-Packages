@@ -1,0 +1,35 @@
+# Maintainer: John Sanpe <sanpeqf@gmail.com>
+# Maintainer: BigfootACA <bigfoot@classfun.cn>
+# Maintainer: chalkin <chalkin@yeah.net>
+
+pkgname=bfdev-git
+_gitname=bfdev
+pkgver=r1340.3e6e094
+pkgrel=1
+pkgdesc='Portable infrastructure and data-structure library'
+arch=('aarch64')
+url='https://github.com/silime/bfdev'
+license=('GPL-3.0-or-later' 'LGPL-3.0-or-later')
+depends=('glibc')
+makedepends=('git' 'cmake' 'gcc')
+provides=('bfdev')
+conflicts=('bfdev')
+options=('staticlibs')
+source=("${_gitname}::git+${url}.git#branch=devel")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "${srcdir}/${_gitname}"
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cmake -B build -S "${_gitname}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build build
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+}

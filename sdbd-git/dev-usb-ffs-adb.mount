@@ -1,0 +1,16 @@
+[Unit]
+Description=Simple Debug Bridge FunctionFS
+PartOf=sdbd.service
+Before=sdbd.service
+After=modprobe@fs-functionfs.service usbgadget-func-functionfs@adb.service
+Wants=modprobe@fs-functionfs.service usbgadget-func-functionfs@adb.service
+
+[Mount]
+What=adb
+Where=/dev/usb-ffs/adb
+Type=functionfs
+
+[Install]
+WantedBy=usb-gadget.target
+Also=usbgadget-func-functionfs@adb.service
+Also=sdbd.service

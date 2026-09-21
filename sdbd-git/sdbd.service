@@ -1,0 +1,18 @@
+[Unit]
+Description=Simple Debug Bridge Server
+RequiresMountsFor=/dev/usb-ffs/adb
+Before=gadget-start.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/sdbd
+RemainAfterExit=yes
+Restart=always
+RestartSec=10
+
+[Install]
+Also=dev-usb\\x2dffs-adb.mount
+RequiredBy=gadget-start.service
+WantedBy=usb-gadget.target

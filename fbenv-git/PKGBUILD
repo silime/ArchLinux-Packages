@@ -1,0 +1,35 @@
+# Maintainer: John Sanpe <sanpeqf@gmail.com>
+# Maintainer: BigfootACA <bigfoot@classfun.cn>
+# Maintainer: chalkin <chalkin@yeah.net>
+
+pkgname=fbenv-git
+_gitname=fbenv
+pkgver=r1.ae74124
+pkgrel=1
+pkgdesc='System utility functions library based on bfdev'
+arch=('aarch64')
+url='https://github.com/silime/fbenv'
+license=('GPL-2.0-or-later' 'LGPL-2.1-or-later')
+depends=('bfdev-git' 'glibc')
+makedepends=('git' 'cmake' 'gcc')
+provides=('fbenv' 'bfenv')
+conflicts=('fbenv' 'bfenv')
+options=('staticlibs')
+source=("${_gitname}::git+${url}.git#branch=main")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "${srcdir}/${_gitname}"
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cmake -B build -S "${_gitname}" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build build
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+}

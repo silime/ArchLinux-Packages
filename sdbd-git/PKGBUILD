@@ -1,0 +1,44 @@
+# Maintainer: John Sanpe <sanpeqf@gmail.com>
+# Maintainer: BigfootACA <bigfoot@classfun.cn>
+# Maintainer: chalkin <chalkin@yeah.net>
+
+pkgname=sdbd-git
+_gitname=sdbd
+pkgver=r4.a591743
+pkgrel=1
+pkgdesc='Simple Debug Bridge daemon'
+arch=('aarch64')
+url='https://github.com/silime/sdbd'
+license=('LGPL-3.0-or-later')
+depends=('bfdev-git' 'fbenv-git' 'glibc')
+makedepends=('git' 'gcc')
+optdepends=('systemd-gadget: USB gadget setup')
+provides=('sdbd' 'adbd')
+conflicts=('sdbd' 'adbd')
+source=("${_gitname}::git+${url}.git#branch=devel"
+        'adbd'
+        'sdbd.service'
+        'dev-usb-ffs-adb.mount')
+sha256sums=('SKIP'
+            '2400b8efaa974507f837f9e683a34926e0e3dfc4784d32fec5ef9389e6dd2b5d'
+            'bb7724c9679d6732da2d043de19bf0860a016d4d3be5dc22ae82ed9388194197'
+            '4c42a02197f868335ba1c613ffd8388dc40f019b372acf3936c0a01496b3f649')
+
+pkgver() {
+  cd "${srcdir}/${_gitname}"
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  make -C "${srcdir}/${_gitname}" sdbd
+}
+
+package() {
+  install -Dm755 "${srcdir}/${_gitname}/sdbd" "${pkgdir}/usr/bin/sdbd"
+  install -Dm755 "${srcdir}/adbd" "${pkgdir}/usr/bin/adbd"
+  install -Dm644 "${srcdir}/sdbd.service" "${pkgdir}/usr/lib/systemd/system/sdbd.service"
+  install -Dm644 "${srcdir}/dev-usb-ffs-adb.mount" \
+    "${pkgdir}/usr/lib/systemd/system/dev-usb\\x2dffs-adb.mount"
+  ln -s sdbd.service "${pkgdir}/usr/lib/systemd/system/adbd.service"
+  ln -s sdbd.service "${pkgdir}/usr/lib/systemd/system/adbd-usb.service"
+}

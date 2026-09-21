@@ -40,6 +40,9 @@ jobs:
             'mesa',
             'sensors/hexagonrpcd',
             'tinyalsa-git',
+            'bfdev-git',
+            'fbenv-git',
+            'sdbd-git',
             'fex-rootfs-archlinux',
             'proton-cachyos-arm64',
             'proton-ge-arm64',
@@ -54,7 +57,7 @@ jobs:
         pacman-key --init && pacman-key --populate archlinuxarm
         pacman-key --recv-keys F60FD4C6D426DAB6
         pacman-key --lsign F60FD4C6D426DAB6
-        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git bc distcc ccache meson libqmi protobuf-c glib2 curl jq squashfs-tools xxhash unzip libarchive
+        pacman -Syyu --noconfirm --ask=4 arch-install-scripts cloud-guest-utils sudo binutils fakeroot base-devel git cmake gcc bc distcc ccache meson libqmi protobuf-c glib2 curl jq squashfs-tools xxhash unzip libarchive
         useradd -m alarm
         passwd -d alarm
         usermod -aG wheel alarm
@@ -85,6 +88,29 @@ jobs:
         echo RELEASE=$(echo ${{ matrix.package }} | sed 's/\//_/g') >> $GITHUB_ENV
 
         cp -a ./. /home/alarm/
+
+        # The dependency packages are built in isolated matrix runners. Build
+        # and install the local stack first when a package needs a sibling
+        # package from this repository.
+        build_local_dep() {
+          local dep="$1"
+          rm -rf "/home/alarm/${dep}"
+          cp -a "${GITHUB_WORKSPACE}/${dep}" "/home/alarm/"
+          chown -R alarm:alarm "/home/alarm/${dep}"
+          ${{ env.BUILD_ALARM_SH }} "(cd /home/alarm/${dep} && makepkg --cleanbuild --nodeps --noconfirm)"
+          pacman --disable-sandbox -U --noconfirm "/home/alarm/${dep}"/*.pkg.tar.*
+          rm -f "/home/alarm/${dep}"/*.pkg.tar.*
+        }
+
+        case "${{ matrix.package }}" in
+          fbenv-git)
+            build_local_dep bfdev-git
+            ;;
+          sdbd-git)
+            build_local_dep bfdev-git
+            build_local_dep fbenv-git
+            ;;
+        esac
 
         case "${{ matrix.package }}" in
           fex-rootfs-archlinux|proton-cachyos-arm64|proton-ge-arm64|steam-arm64)
