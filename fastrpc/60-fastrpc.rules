@@ -1,0 +1,6 @@
+# Allow FastRPC clients to use the DSP devices and system DMA heap.
+# Keep the existing hexagonrpcd user as the owner where it is installed.
+# Start the required RPC daemon explicitly; ADSP may already be served by
+# hexagonrpcd and must not automatically acquire a second listener.
+ACTION=="add", SUBSYSTEM=="dma_heap", KERNEL=="system", RUN+="/usr/bin/setfacl -m g:fastrpc:rw $env{DEVNAME}"
+SUBSYSTEM=="misc", KERNEL=="fastrpc-*", GROUP="fastrpc", MODE="0660"

@@ -1,0 +1,34 @@
+pkgbase = fastrpc
+	pkgdesc = Qualcomm FastRPC userspace libraries and DSP RPC daemons
+	pkgver = 1.0.7
+	pkgrel = 1
+	url = https://github.com/radxa-pkg/fastrpc
+	arch = aarch64
+	license = BSD-3-Clause
+	makedepends = git
+	makedepends = autoconf
+	makedepends = automake
+	makedepends = libtool
+	makedepends = pkgconf
+	depends = glibc
+	depends = libyaml
+	depends = libbsd
+	depends = acl
+	depends = systemd
+	options = !strip
+	options = !debug
+	source = radxa-fastrpc::git+https://github.com/radxa-pkg/fastrpc.git#commit=05574c2cf8d0e91b71717070c6bc664cb2f1574f
+	source = qualcomm-fastrpc::git+https://github.com/qualcomm/fastrpc.git#commit=228d98b5f143ed917789cde017a8aa548e65b80b
+	source = 60-fastrpc.rules
+	sha256sums = SKIP
+	sha256sums = SKIP
+	sha256sums = d0fd3284b7e968c881263c0fe8701bd70af76ae10af29ee5cc9abd0be2553c58
+
+pkgname = fastrpc
+	provides = libadsprpc.so
+	provides = libcdsprpc.so
+	provides = libsdsprpc.so
+
+pkgname = fastrpc-test
+	pkgdesc = Qualcomm FastRPC diagnostics and DSP example tests (v68/v75)
+	depends = fastrpc=1.0.7-1

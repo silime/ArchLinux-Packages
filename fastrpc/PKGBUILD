@@ -1,0 +1,61 @@
+# Maintainer: silime <chalkin@yeah.net>
+pkgbase=fastrpc
+pkgname=(fastrpc fastrpc-test)
+pkgver=1.0.7
+pkgrel=1
+pkgdesc='Qualcomm FastRPC userspace libraries and DSP RPC daemons'
+arch=('aarch64')
+url='https://github.com/radxa-pkg/fastrpc'
+license=('BSD-3-Clause')
+depends=('glibc' 'libyaml' 'libbsd' 'acl' 'systemd')
+makedepends=('git' 'autoconf' 'automake' 'libtool' 'pkgconf')
+# The test payload includes prebuilt Hexagon ELF objects. Host strip/debug
+# tools cannot process those objects; preserve the upstream test binaries.
+options=('!strip' '!debug')
+_radxa_commit=05574c2cf8d0e91b71717070c6bc664cb2f1574f
+_qcom_commit=228d98b5f143ed917789cde017a8aa548e65b80b
+source=("radxa-fastrpc::git+https://github.com/radxa-pkg/fastrpc.git#commit=${_radxa_commit}"
+        "qualcomm-fastrpc::git+https://github.com/qualcomm/fastrpc.git#commit=${_qcom_commit}"
+        '60-fastrpc.rules')
+sha256sums=('SKIP' 'SKIP' 'd0fd3284b7e968c881263c0fe8701bd70af76ae10af29ee5cc9abd0be2553c58')
+
+prepare() {
+  cd radxa-fastrpc
+  git submodule init
+  git config submodule.src.url "${srcdir}/qualcomm-fastrpc"
+  git -c protocol.file.allow=always submodule update
+  cd src
+  autoreconf -fi
+}
+
+build() {
+  cd radxa-fastrpc/src
+  ./configure --prefix=/usr --sbindir=/usr/bin --libdir=/usr/lib \
+    --with-systemdsystemunitdir=/usr/lib/systemd/system \
+    --with-udevrulesdir=/usr/lib/udev/rules.d \
+    --with-sysusersdir=/usr/lib/sysusers.d \
+    --with-config-base-dir=/usr/share/qcom/
+  make
+}
+
+package_fastrpc() {
+  provides=('libadsprpc.so' 'libcdsprpc.so' 'libsdsprpc.so')
+  cd radxa-fastrpc/src
+  make -C inc DESTDIR="${pkgdir}" install
+  make -C src DESTDIR="${pkgdir}" install
+  make -C files DESTDIR="${pkgdir}" install
+  make -C Docs/manpages DESTDIR="${pkgdir}" install
+  install -Dm644 "${srcdir}/60-fastrpc.rules" \
+    "${pkgdir}/usr/lib/udev/rules.d/60-fastrpc.rules"
+  install -Dm644 LICENSE.txt "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 Docs/conf_guideline.md \
+    "${pkgdir}/usr/share/doc/${pkgname}/conf_guideline.md"
+}
+
+package_fastrpc-test() {
+  pkgdesc='Qualcomm FastRPC diagnostics and DSP example tests (v68/v75)'
+  depends=("fastrpc=${pkgver}-${pkgrel}")
+  cd radxa-fastrpc/src
+  make -C test DESTDIR="${pkgdir}" install
+  install -Dm644 LICENSE.txt "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}
