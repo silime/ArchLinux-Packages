@@ -109,6 +109,17 @@ jobs:
 
         cp -a ./. /home/alarm/
 
+        # makepkg uses the build user's keyring for source signatures.
+        # Import the public keys shipped with the package before verification.
+        import_source_keys() {
+          local package_dir="$1"
+          if [[ -d "$package_dir/keys/pgp" ]]; then
+            find "$package_dir/keys/pgp" -maxdepth 1 -type f -name '*.asc' \
+              -exec sudo -H -u alarm gpg --batch --import {} +
+          fi
+        }
+        import_source_keys /home/alarm
+
         # The dependency packages are built in isolated matrix runners. Build
         # and install the local stack first when a package needs a sibling
         # package from this repository.
@@ -117,6 +128,7 @@ jobs:
           rm -rf "/home/alarm/${dep}"
           cp -a "${GITHUB_WORKSPACE}/${dep}" "/home/alarm/"
           chown -R alarm:alarm "/home/alarm/${dep}"
+          import_source_keys "/home/alarm/${dep}"
           ${{ env.BUILD_ALARM_SH }} "(cd /home/alarm/${dep} && makepkg --cleanbuild --nodeps --noconfirm)"
           pacman --disable-sandbox -U --noconfirm "/home/alarm/${dep}"/*.pkg.tar.*
           rm -f "/home/alarm/${dep}"/*.pkg.tar.*
