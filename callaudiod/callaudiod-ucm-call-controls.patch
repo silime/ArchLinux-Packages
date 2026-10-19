@@ -1,0 +1,246 @@
+diff --git a/src/cad-pulse.c b/src/cad-pulse.c
+index 6ea4ea6..5e2a03c 100644
+--- a/src/cad-pulse.c
++++ b/src/cad-pulse.c
+@@ -46,6 +46,8 @@ struct _CadPulse
+     gboolean has_voice_profile;
+     gchar *speaker_port;
+     gchar *earpiece_port;
++    gchar *media_profile;
++    guint mode_serial;
+ 
+     GHashTable *sink_ports;
+     GHashTable *source_ports;
+@@ -61,12 +63,26 @@ typedef struct _CadPulseOperation {
+     CadPulse *pulse;
+     CadOperation *op;
+     guint value;
++    guint mode_serial;
+ } CadPulseOperation;
+ 
+ static void pulseaudio_cleanup(CadPulse *self);
+ static gboolean pulseaudio_connect(CadPulse *self);
+ static gboolean init_pulseaudio_objects(gpointer data);
+ 
++static void remember_media_profile(pa_context *ctx, const pa_card_info *info,
++                                   int eol, void *data)
++{
++    CadPulse *self = data;
++
++    if (eol || !info || !info->active_profile2)
++        return;
++    if (g_str_has_prefix(info->active_profile2->name, SND_USE_CASE_VERB_HIFI)) {
++        g_free(self->media_profile);
++        self->media_profile = g_strdup(info->active_profile2->name);
++    }
++}
++
+ /******************************************************************************
+  * Source management
+  *
+@@ -149,12 +165,8 @@ static void change_source_info(pa_context *ctx, const pa_source_info *info, int
+ 
+ static void process_new_source(CadPulse *self, const pa_source_info *info)
+ {
+-    const gchar *prop;
+     int i;
+ 
+-    prop = pa_proplist_gets(info->proplist, PA_PROP_DEVICE_CLASS);
+-    if (prop && g_strcmp0(prop, SINK_CLASS) != 0)
+-        return;
+     if (info->monitor_of_sink != PA_INVALID_INDEX)
+         return;
+     if (info->card != self->card_id || self->source_id != -1)
+@@ -299,14 +311,12 @@ static void change_sink_info(pa_context *ctx, const pa_sink_info *info, int eol,
+ 
+ static void process_new_sink(CadPulse *self, const pa_sink_info *info)
+ {
+-    const gchar *prop;
+     guint i;
+ 
+-    prop = pa_proplist_gets(info->proplist, PA_PROP_DEVICE_CLASS);
+-    if (prop && g_strcmp0(prop, SINK_CLASS) != 0)
+-        return;
+     if (info->card != self->card_id || self->sink_id != -1)
+         return;
++    if (info->active_port && info->active_port->available == PA_PORT_AVAILABLE_NO)
++        return;
+ 
+     self->sink_id = info->index;
+     if (self->sink_ports)
+@@ -481,11 +491,15 @@ static void init_card_info(pa_context *ctx, const pa_card_info *info, int eol, v
+         switch (port->type) {
+           case PA_DEVICE_PORT_TYPE_SPEAKER:
+             has_speaker = TRUE;
++            g_free(self->speaker_port);
++            self->speaker_port = g_strdup(port->name);
+             break;
+           case PA_DEVICE_PORT_TYPE_EARPIECE:
+           case PA_DEVICE_PORT_TYPE_HANDSET:
+           case PA_DEVICE_PORT_TYPE_HEADPHONES:
+             has_earpiece = TRUE;
++            g_free(self->earpiece_port);
++            self->earpiece_port = g_strdup(port->name);
+             break;
+           default:
+             break;
+@@ -499,6 +513,7 @@ static void init_card_info(pa_context *ctx, const pa_card_info *info, int eol, v
+     }
+ 
+     self->card_id = info->index;
++    remember_media_profile(ctx, info, 0, self);
+ 
+     g_debug("CARD: idx=%u name='%s'", info->index, info->name);
+ 
+@@ -643,6 +658,10 @@ static void changed_cb(pa_context *ctx, pa_subscription_event_type_t type, uint3
+             g_idle_add(init_pulseaudio_objects, self);
+         } else if (idx == self->card_id && kind == PA_SUBSCRIPTION_EVENT_CHANGE) {
+             g_debug("card %u changed", idx);
++            op = pa_context_get_card_info_by_index(ctx, idx,
++                                                   remember_media_profile, self);
++            if (op)
++                pa_operation_unref(op);
+             if (self->sink_id != -1) {
+                 op = pa_context_get_sink_info_by_index(ctx, self->sink_id,
+                                                        change_sink_info, self);
+@@ -755,6 +774,7 @@ static void dispose(GObject *object)
+ 
+     g_clear_pointer(&self->speaker_port, g_free);
+     g_clear_pointer(&self->earpiece_port, g_free);
++    g_clear_pointer(&self->media_profile, g_free);
+ 
+     pulseaudio_cleanup(self);
+ 
+@@ -863,6 +883,11 @@ static void set_card_profile(pa_context *ctx, const pa_card_info *info, int eol,
+     if (eol != 0)
+         return;
+ 
++    if (operation->mode_serial != operation->pulse->mode_serial) {
++        operation_complete_cb(ctx, 0, operation);
++        return;
++    }
++
+     if (!info) {
+         g_critical("PA returned no card info (eol=%d)", eol);
+         return;
+@@ -888,6 +913,14 @@ static void set_card_profile(pa_context *ctx, const pa_card_info *info, int eol,
+         for (int i = 0; i < info->n_profiles; i++) {
+             profile = info->profiles2[i];
+ 
++            if (operation->value == CALL_AUDIO_MODE_DEFAULT &&
++                operation->pulse->media_profile &&
++                g_strcmp0(profile->name, operation->pulse->media_profile) == 0 &&
++                profile->available) {
++                target_profile = profile->name;
++                break;
++            }
++
+             if (profile->available &&
+                 g_str_has_prefix(profile->name, target_verb) &&
+                 profile->priority > target_priority) {
+@@ -912,6 +945,60 @@ static void set_card_profile(pa_context *ctx, const pa_card_info *info, int eol,
+     }
+ }
+ 
++static void set_speaker_profile(pa_context *ctx, const pa_card_info *info,
++                                int eol, void *data)
++{
++    CadPulseOperation *operation = data;
++    const gchar *port_name = operation->value ? operation->pulse->speaker_port :
++                                               operation->pulse->earpiece_port;
++    const pa_card_profile_info2 *best = NULL;
++    pa_operation *op = NULL;
++
++    if (eol || !info)
++        return;
++    for (guint i = 0; i < info->n_ports; i++) {
++        pa_card_port_info *port = info->ports[i];
++
++        if (g_strcmp0(port->name, port_name) != 0)
++            continue;
++        for (guint j = 0; j < port->n_profiles; j++) {
++            pa_card_profile_info2 *profile = port->profiles2[j];
++
++            if (profile->available &&
++                g_str_has_prefix(profile->name, SND_USE_CASE_VERB_VOICECALL) &&
++                (!best || profile->priority > best->priority))
++                best = profile;
++        }
++    }
++    if (best)
++        op = pa_context_set_card_profile_by_index(ctx, info->index, best->name,
++                                                  operation_complete_cb, operation);
++    if (op)
++        pa_operation_unref(op);
++    else
++        operation_complete_cb(ctx, 0, operation);
++}
++
++static gboolean restore_media_profile(gpointer data)
++{
++    CadPulseOperation *operation = data;
++    pa_operation *op;
++
++    if (operation->mode_serial != operation->pulse->mode_serial) {
++        operation_complete_cb(operation->pulse->ctx, 0, operation);
++        return G_SOURCE_REMOVE;
++    }
++
++    op = pa_context_get_card_info_by_index(operation->pulse->ctx,
++                                          operation->pulse->card_id,
++                                          set_card_profile, operation);
++    if (op)
++        pa_operation_unref(op);
++    else
++        operation_complete_cb(operation->pulse->ctx, 0, operation);
++    return G_SOURCE_REMOVE;
++}
++
+ static void set_output_port(pa_context *ctx, const pa_sink_info *info, int eol, void *data)
+ {
+     CadPulseOperation *operation = data;
+@@ -995,6 +1082,7 @@ void cad_pulse_select_mode(CallAudioMode mode, CadOperation *cad_op)
+     operation->pulse = cad_pulse_get_default();
+     operation->op = cad_op;
+     operation->value = mode;
++    operation->mode_serial = ++operation->pulse->mode_serial;
+ 
+     if (mode != CALL_AUDIO_MODE_CALL) {
+         /*
+@@ -1009,7 +1097,7 @@ void cad_pulse_select_mode(CallAudioMode mode, CadOperation *cad_op)
+          * If the card has a dedicated voice profile, disable speaker so it
+          * doesn't get automatically enabled for next call.
+          */
+-        if (operation->pulse->has_voice_profile) {
++        if (operation->pulse->has_voice_profile && !operation->pulse->media_profile) {
+             CadOperation *disable_speaker_op = g_new0(CadOperation, 1);
+             disable_speaker_op->type = CAD_OPERATION_ENABLE_SPEAKER;
+ 
+@@ -1022,6 +1110,10 @@ void cad_pulse_select_mode(CallAudioMode mode, CadOperation *cad_op)
+        * The pinephone f.e. has a voice profile
+        */
+         g_debug("card has voice profile, using it");
++        if (mode == CALL_AUDIO_MODE_DEFAULT) {
++            g_timeout_add(1000, restore_media_profile, operation);
++            return;
++        }
+         op = pa_context_get_card_info_by_index(operation->pulse->ctx,
+                                                operation->pulse->card_id,
+                                                set_card_profile, operation);
+@@ -1077,6 +1169,16 @@ void cad_pulse_enable_speaker(gboolean enable, CadOperation *cad_op)
+     operation->op = cad_op;
+     operation->value = (guint)enable;
+ 
++    if (operation->pulse->has_voice_profile &&
++        operation->pulse->audio_mode == CALL_AUDIO_MODE_CALL) {
++        op = pa_context_get_card_info_by_index(operation->pulse->ctx,
++                                               operation->pulse->card_id,
++                                               set_speaker_profile, operation);
++        if (op)
++            pa_operation_unref(op);
++        return;
++    }
++
+     op = pa_context_get_sink_info_by_index(operation->pulse->ctx,
+                                            operation->pulse->sink_id,
+                                            set_output_port, operation);

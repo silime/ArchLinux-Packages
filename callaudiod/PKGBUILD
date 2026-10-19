@@ -1,0 +1,30 @@
+# Maintainer: Chalkin <chalkin@yeah.net>
+pkgname=callaudiod
+pkgver=0.1.99
+pkgrel=4
+pkgdesc="Call audio routing daemon with UCM combination-profile support"
+arch=('aarch64')
+url="https://gitlab.com/mobian1/callaudiod"
+license=('GPL-3.0-or-later')
+depends=('alsa-lib' 'appstream' 'glib2' 'glibc' 'libgcc' 'libpulse')
+makedepends=('git' 'glib2-devel' 'meson')
+options=('strip' '!debug')
+_commit=fe87a9267f1e074d19055d7a236e6b6f759af11d
+source=("git+https://gitlab.com/mobian1/callaudiod.git#commit=${_commit}"
+        'callaudiod-ucm-call-controls.patch')
+sha256sums=('SKIP'
+            '1923d55c8fbbe0ad7676175e61998af83de356c28d2aee8a1ad4633a50e3c358')
+
+prepare() {
+  cd "$pkgname"
+  patch -Np1 -i ../callaudiod-ucm-call-controls.patch
+}
+
+build() {
+  arch-meson "$pkgname" build --buildtype=release -Dgtk_doc=false
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+}

@@ -1,0 +1,24 @@
+pkgbase = callaudiod
+	pkgdesc = Call audio routing daemon with UCM combination-profile support
+	pkgver = 0.1.99
+	pkgrel = 4
+	url = https://gitlab.com/mobian1/callaudiod
+	arch = aarch64
+	license = GPL-3.0-or-later
+	makedepends = git
+	makedepends = glib2-devel
+	makedepends = meson
+	depends = alsa-lib
+	depends = appstream
+	depends = glib2
+	depends = glibc
+	depends = libgcc
+	depends = libpulse
+	options = strip
+	options = !debug
+	source = git+https://gitlab.com/mobian1/callaudiod.git#commit=fe87a9267f1e074d19055d7a236e6b6f759af11d
+	source = callaudiod-ucm-call-controls.patch
+	sha256sums = SKIP
+	sha256sums = 1923d55c8fbbe0ad7676175e61998af83de356c28d2aee8a1ad4633a50e3c358
+
+pkgname = callaudiod
