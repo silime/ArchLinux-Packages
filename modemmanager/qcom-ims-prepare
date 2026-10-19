@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Prepare Qualcomm QRTR data routing before ModemManager starts.
+
+The optional IMS profile index is supplied by the platform configuration;
+other profiles and provisioning sessions are preserved.
+"""
+import argparse
+import re
+import socket
+import struct
+import subprocess
+import time
+
+def tlv(kind, value):
+    return struct.pack('<BH', kind, len(value)) + value
+
+
+class Client:
+    def __init__(self, service, local_node):
+        lines = subprocess.check_output(['qrtr-lookup'], text=True).splitlines()
+        endpoints = [tuple(map(int, line.split()[:5])) for line in lines
+                     if line.split() and line.split()[0] == str(service)]
+        endpoint = next(e for e in endpoints if e[2] == 0)
+        self.address = endpoint[3:5]
+        self.sock = socket.socket(socket.AF_QIPCRTR, socket.SOCK_DGRAM)
+        self.sock.bind((local_node, 0))
+        self.txn = 0
+
+    def request(self, message, payload=b'', raw=False):
+        self.txn += 1
+        packet = struct.pack('<BHHH', 0, self.txn, message, len(payload)) + payload
+        self.sock.sendto(packet, self.address)
+        deadline = time.monotonic() + 10
+        while True:
+            self.sock.settimeout(max(0.001, deadline - time.monotonic()))
+            data, source = self.sock.recvfrom(65536)
+            if source != self.address or len(data) < 7:
+                continue
+            flags, txn, msg, length = struct.unpack_from('<BHHH', data)
+            if (flags, txn, msg) != (2, self.txn, message):
+                continue
+            if length != len(data) - 7:
+                raise ValueError('Invalid QMI response length')
+            fields, offset = {}, 7
+            while offset < len(data):
+                kind, size = struct.unpack_from('<BH', data, offset)
+                offset += 3
+                if offset + size > len(data):
+                    raise ValueError('Truncated QMI TLV')
+                fields[kind] = data[offset:offset + size]
+                offset += size
+            status, error = struct.unpack('<HH', fields[2])
+            if status:
+                raise RuntimeError(f'QMI {message:#x}: status={status}, error={error}')
+            if raw:
+                return fields
+            return {f'{k:#04x}': int.from_bytes(v, 'little')
+                    if len(v) in (1, 2, 4, 8) else v.hex()
+                    for k, v in fields.items() if k != 2}
+
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--local-node', type=int, default=1)
+    parser.add_argument('--data-subscription', type=int, choices=(1, 2, 3), default=1)
+    parser.add_argument('--ims-profile', type=int, choices=range(1, 256))
+    args = parser.parse_args()
+    client = Client(42, args.local_node)
+    try:
+        current = client.request(0x4f)
+        if current.get('0x10') != args.data_subscription:
+            client.request(0x4e, tlv(1, struct.pack('<I', args.data_subscription)) +
+                           tlv(0x10, struct.pack('<I', 0)))
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                current = client.request(0x4f)
+                if current.get('0x10') == args.data_subscription:
+                    break
+                time.sleep(0.25)
+            else:
+                raise RuntimeError('Default data subscription did not switch')
+    finally:
+        client.sock.close()
+
+    if args.ims_profile is not None:
+        profiles = subprocess.check_output(
+            ['qmicli', '-d', 'qrtr://0', '--wds-get-profile-list=3gpp'], text=True)
+        if not re.search(r'^\s*\[' + str(args.ims_profile) + r'\]\s+3gpp\s+-', profiles, re.M):
+            created = subprocess.check_output(
+                ['qmicli', '-d', 'qrtr://0',
+                 '--wds-create-profile=3gpp,name=linux-ims,apn=ims,pdp-type=IPV6'], text=True)
+            if not re.search(r"Profile index:\s*'" + str(args.ims_profile) + "'", created):
+                raise RuntimeError('IMS profile was allocated at a different index')
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""Prepare a present USIM before ModemManager starts, without periodic resets."""
+import os
+import re
+import subprocess
+import sys
+import time
+
+DEVICE = os.environ.get('QMI_DEVICE', 'qrtr://0')
+DEADLINE = None
+
+
+def qmi(option):
+    # Never print the command or raw card status: they may contain the AID/ICCID.
+    remaining = DEADLINE - time.monotonic() if DEADLINE else 8
+    if remaining <= 0:
+        raise RuntimeError('SIM preparation deadline expired')
+    result = subprocess.run(['qmicli', '-d', DEVICE, option],
+                            capture_output=True, text=True, timeout=min(8, remaining))
+    if result.returncode:
+        raise RuntimeError(option.split('=')[0] + ' failed')
+    return result.stdout
+
+
+def parse_card_status(text):
+    primary = re.search(r"Primary GW:\s+slot '(\d+)', application '(\d+)'", text)
+    selected = tuple(map(int, primary.groups())) if primary else None
+    candidates = []
+    for slot_match in re.finditer(r'(?m)^Slot \[(\d+)\]:\n(.*?)(?=^Slot \[|\Z)',
+                                  text, re.S):
+        slot, body = int(slot_match[1]), slot_match[2]
+        if not re.search(r"Card state:\s+'present'", body):
+            continue
+        for app_match in re.finditer(r'Application \[(\d+)\]:\n(.*?)(?=\n\s*Application \[|\Z)',
+                                     body, re.S):
+            app, fields = int(app_match[1]), app_match[2]
+            if not re.search(r"Application type:\s+'(?:usim|sim)\b", fields):
+                continue
+            state = re.search(r"Application state:\s+'([^']+)'", fields)
+            aid = re.search(r'Application ID:\s*\n\s*([0-9A-Fa-f:]+)', fields)
+            if state and aid:
+                candidates.append({'slot': slot, 'app': app, 'state': state[1],
+                                   'aid': aid[1].replace(':', '')})
+    # Preserve the selected subscription; otherwise prefer an initialized USIM.
+    candidates.sort(key=lambda app: ((app['slot'], app['app']) != selected,
+                                     app['state'] != 'ready', app['slot'], app['app']))
+    return selected, candidates
+
+
+def status():
+    return parse_card_status(qmi('--uim-get-card-status'))
+
+
+def usable(app):
+    # Locked cards must be handled by ModemManager, never power-cycled for a PIN.
+    return app['state'] in ('ready', 'pin1-or-upin-pin-required', 'puk1-or-upin-puk-required',
+                            'pin-required', 'puk-required', 'check-personalization-state')
+
+
+def activate(app):
+    qmi('--uim-change-provisioning-session=session-type=primary-gw-provisioning,'
+        f"activate=yes,slot={app['slot']},aid={app['aid']}")
+
+
+def wait_usable(slot, attempts):
+    for _ in range(attempts):
+        selected, apps = status()
+        for app in apps:
+            if app['slot'] == slot and usable(app) and selected == (slot, app['app']):
+                return app
+        time.sleep(1)
+    return None
+
+
+def main():
+    global DEADLINE
+    DEADLINE = time.monotonic() + 80
+    active = subprocess.run(['systemctl', 'is-active', 'ModemManager.service'],
+                            capture_output=True, text=True).stdout.strip()
+    if active == 'active':
+        raise RuntimeError('Refusing to reconfigure UIM while ModemManager is running')
+
+    for attempt in range(20):
+        try:
+            selected, apps = status()
+            if apps:
+                break
+        except (RuntimeError, subprocess.TimeoutExpired):
+            if attempt == 19:
+                raise RuntimeError('UIM service did not become available')
+        time.sleep(1)
+    if not apps:
+        print('UIM: no present SIM/USIM application', flush=True)
+        return
+    app = apps[0]
+    if selected == (app['slot'], app['app']) and usable(app):
+        return
+
+    # A previous failed initialization can leave the modem shutting down.
+    mode = qmi('--dms-get-operating-mode')
+    if "Mode: 'online'" not in mode:
+        qmi('--dms-set-operating-mode=online')
+        time.sleep(2)
+    if selected != (app['slot'], app['app']):
+        activate(app)
+    if not wait_usable(app['slot'], 5):
+        # One recovery only, during ExecStartPre. Detected cards may not finish
+        # initialization until their physical slot is powered on again.
+        print(f"UIM: recovering uninitialized application on slot {app['slot']}", flush=True)
+        qmi(f"--uim-sim-power-off={app['slot']}")
+        time.sleep(3)
+        qmi(f"--uim-sim-power-on={app['slot']}")
+        for _ in range(10):
+            selected, apps = status()
+            app = next((candidate for candidate in apps if candidate['slot'] == app['slot']), app)
+            if apps and any(candidate['slot'] == app['slot'] for candidate in apps):
+                if selected != (app['slot'], app['app']):
+                    activate(app)
+                break
+            time.sleep(1)
+        if not wait_usable(app['slot'], 15):
+            raise RuntimeError(f"SIM application on slot {app['slot']} did not become usable")
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (RuntimeError, subprocess.TimeoutExpired) as error:
+        # TimeoutExpired includes the full command, possibly an AID.
+        print('UIM: ' + ('QMI request timed out' if isinstance(error, subprocess.TimeoutExpired)
+                         else str(error)), file=sys.stderr, flush=True)
+        sys.exit(1)

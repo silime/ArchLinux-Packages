@@ -1,0 +1,70 @@
+--- a/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
++++ b/src/plugins/qcom-soc/mm-broadband-modem-qmi-qcom-soc.c
+@@ -26,7 +26,13 @@
+ #include "mm-iface-modem.h"
+ #include "mm-broadband-modem-qmi-qcom-soc.h"
+ 
+-G_DEFINE_TYPE (MMBroadbandModemQmiQcomSoc, mm_broadband_modem_qmi_qcom_soc, MM_TYPE_BROADBAND_MODEM_QMI)
++static void iface_modem_init (MMIfaceModemInterface *iface);
++
++G_DEFINE_TYPE_EXTENDED (MMBroadbandModemQmiQcomSoc,
++                        mm_broadband_modem_qmi_qcom_soc,
++                        MM_TYPE_BROADBAND_MODEM_QMI,
++                        0,
++                        G_IMPLEMENT_INTERFACE (MM_TYPE_IFACE_MODEM, iface_modem_init))
+ 
+ /*****************************************************************************/
+ 
+@@ -142,6 +148,43 @@
+ 
+ /*****************************************************************************/
+ 
++static gboolean
++check_for_sim_swap_finish (MMIfaceModem  *self,
++                           GAsyncResult  *res,
++                           GError       **error)
++{
++    return g_task_propagate_boolean (G_TASK (res), error);
++}
++
++static void
++check_for_sim_swap (MMIfaceModem        *self,
++                    GAsyncReadyCallback  callback,
++                    gpointer             user_data)
++{
++    GTask *task;
++
++    /*
++     * Qualcomm smartphone firmware may expose multiple UIM applications and
++     * return an ICCID for a different slot when the modem transitions online.
++     * The generic checker interprets that as a physical SIM replacement and
++     * continuously disables and reprobes the modem. Slot changes are reported
++     * by the QMI UIM slot-status indications, so skip the identifier polling.
++     */
++    mm_obj_dbg (self, "skipping unreliable SIM identifier swap check");
++    task = g_task_new (self, NULL, callback, user_data);
++    g_task_return_boolean (task, TRUE);
++    g_object_unref (task);
++}
++
++static void
++iface_modem_init (MMIfaceModemInterface *iface)
++{
++    iface->check_for_sim_swap = check_for_sim_swap;
++    iface->check_for_sim_swap_finish = check_for_sim_swap_finish;
++}
++
++/*****************************************************************************/
++
+ MMBroadbandModemQmiQcomSoc *
+ mm_broadband_modem_qmi_qcom_soc_new (const gchar  *device,
+                                      const gchar  *physdev,
+@@ -160,7 +203,7 @@
+                          /* QMI bearer supports NET only */
+                          MM_BASE_MODEM_DATA_NET_SUPPORTED, TRUE,
+                          MM_BASE_MODEM_DATA_TTY_SUPPORTED, FALSE,
+-                         MM_IFACE_MODEM_SIM_HOT_SWAP_SUPPORTED, TRUE,
++                         MM_IFACE_MODEM_SIM_HOT_SWAP_SUPPORTED, FALSE,
+                          NULL);
+ }
+ 

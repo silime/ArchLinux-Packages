@@ -1,0 +1,1 @@
+ACTION=="add|change", SUBSYSTEM=="net", KERNEL=="rmnet_ipa0", ENV{ID_MM_INITIAL_QMAP_MUX_ID}="129"

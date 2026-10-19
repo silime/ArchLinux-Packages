@@ -1,0 +1,188 @@
+# Maintainer: Jan Alexander Steffens (heftig) <heftig@archlinux.org>
+# Contributor: Ionut Biru <ibiru@archlinux.org>
+
+pkgbase=modemmanager
+pkgname=(
+  modemmanager
+  libmm-glib
+  modemmanager-docs
+)
+pkgver=1.25.95_dev
+pkgrel=1.8
+pkgdesc="Mobile broadband modem management service"
+url="https://www.freedesktop.org/wiki/Software/ModemManager/"
+arch=(aarch64)
+options=('strip' '!debug')
+license=(
+  GPL-2.0-or-later
+  LGPL-2.1-or-later
+)
+depends=(
+  bash
+  python
+  qrtr
+  glib2
+  glibc
+  hicolor-icon-theme
+  libgcc
+  libgudev
+  libmbim
+  libqmi
+  libqrtr-glib
+  mobile-broadband-provider-info
+  polkit
+  ppp
+  systemd-libs
+)
+makedepends=(
+  bash-completion
+  git
+  glib2-devel
+  gobject-introspection
+  gtk-doc
+  meson
+  systemd
+  vala
+)
+checkdepends=(
+  python-dbus
+  python-gobject
+)
+source=(
+  "git+https://gitlab.freedesktop.org/mobile-broadband/ModemManager.git?signed#tag=1.25.95-dev"
+  fix-qcom-soc-dual-sim-reprobe-loop.patch
+  fix-netlink-transaction-use-after-free.patch
+  qmi-uim-primary
+  test-qmi-uim-primary.py
+  10-qmi-uim-primary.conf
+  78-mm-qcom-sm8550.rules
+  qcom-ims-prepare
+  11-qcom-ims-prepare.conf
+  modemmanager.install
+)
+b2sums=(
+  'SKIP'
+  '4a5d416c1ba5c19146d3e4f27f70aeeffcffa6aef866462a55e660c44801414f574796092b3004395f1eacf6b6555201b4b6d41a31f19f50d4fb6d34e813a7ba'
+  '65bf702989049ac8049dd454aec4ab3638ead5fff4f37514533f9069bd125571ddaf75f173bba6f2ae68ce94be514f47096ec7ba2435caf84bcad0514bdc620d'
+  '84fbc4d91c9c5901bf5e33909ade59ba002d4061a57a3f05c62088d769062a453d9ec276d0f2be12ed42e18c74a027c491aa4ff69404b645f05dcea9b366419f'
+  'e0d5c7227a081775970f297cf71a2687cb4439db726bb856d19ba4bf06624236c8f3328abd513e29b1678f8236c01db55653c2b4c58a6c09da9f8c82a52e61d6'
+  'f9fdb863189d11fdb76fe635360d77c774d1578286069e0ddba6ce71d91b2ae9cd5bda14fccc83ef03c5a2cede4dada6462b11ad668c83c16a011e3d9d39aa0e'
+  'fa609c590ba58ccf29ab4259d8cf88ec6edd70690c943800a5d8626bc989eef65178fb76bd8f42f6177e8af295af964903e98bcb40485b6a01e5ba449e41091e'
+  'ef916112430b028e25f16b0f4d0f0a94d27efd04b82a825314dc58394292c6da9c767d68b9329579cd1ccc1eaa6756ffbf49509bea390409016aed2b93cf5eb6'
+  '736d6964914d9d19137888fec67398194efb1cfa7475e72365842b8df07f86f7d57609acdfaea18d3e9e807cdbca88a98ee0edce5343ceb6fec51c309da62855'
+  '7cea0e3b07616b219a178f13439b7ae7d59ab76668594f0a5e71e0b53df5bcff6949648b8751b13c9ee8fe6130f1ed15ce8cae5b54fce802883707a70e05ff3b'
+)
+validpgpkeys=(
+  A814D09B9C5BC01945A64308AECE0239C6606AD5 # Aleksander Morgado <aleksandermj@chromium.org>
+  3A948E16E8860C68CD68441D734614319E26A433 # Dan Williams <dan@ioncontrol.co>
+)
+
+prepare() {
+  cd ModemManager
+
+  git apply ../fix-qcom-soc-dual-sim-reprobe-loop.patch
+  # Preserve the test left untracked by a previous git-apply build.
+  if [[ -f src/tests/test-netlink.c ]] &&
+     ! git ls-files --error-unmatch src/tests/test-netlink.c >/dev/null 2>&1; then
+    mv src/tests/test-netlink.c "src/tests/test-netlink.c.pre-prepare-$(date +%s)"
+  fi
+  git apply ../fix-netlink-transaction-use-after-free.patch
+
+  # Fix gtk-doc build
+  if ! git merge-base --is-ancestor 1ec2b86239c3686e22034baae0068bd5d52779ae HEAD; then
+    git cherry-pick -n 1ec2b86239c3686e22034baae0068bd5d52779ae
+  fi
+
+  # Fix for Fibocom modems
+  # https://gitlab.archlinux.org/archlinux/packaging/packages/modemmanager/-/issues/1
+  if ! git merge-base --is-ancestor 018e44084825ab294ad2b5d5b301d2b9e2577eb1 HEAD; then
+    git cherry-pick -n 018e44084825ab294ad2b5d5b301d2b9e2577eb1
+  fi
+}
+
+build() {
+  local meson_options=(
+    -D dbus_policy_dir=/usr/share/dbus-1/system.d
+    -D dist_version="\"$pkgver-$pkgrel\""
+    -D gtk_doc=true
+    -D polkit=permissive
+    -D vapi=true
+  )
+
+  if [[ -f build/meson-private/coredata.dat ]]; then
+    meson_options+=(--reconfigure)
+  fi
+  arch-meson ModemManager build "${meson_options[@]}"
+  meson compile -C build
+}
+
+check() {
+  python "$srcdir/test-qmi-uim-primary.py" "$srcdir/qmi-uim-primary"
+  meson test -C build --suite daemon --print-errorlogs
+}
+
+_pick() {
+  local p="$1" f d; shift
+  for f; do
+    d="$srcdir/$p/${f#$pkgdir/}"
+    mkdir -p "$(dirname "$d")"
+    mv "$f" "$d"
+    rmdir -p --ignore-fail-on-non-empty "$(dirname "$f")"
+  done
+}
+
+package_modemmanager() {
+  install=modemmanager.install
+  license=(GPL-2.0-or-later)
+  depends+=(
+    "libmm-glib=$pkgver-$pkgrel" libmm-glib.so
+    libgudev-1.0.so
+    libg{lib,object,io,module}-2.0.so
+    libmbim-glib.so
+    libqmi-glib.so
+    libsystemd.so
+  )
+  optdepends=(
+    'usb_modeswitch: install if your modem shows up as a storage drive'
+  )
+
+  meson install -C build --destdir "$pkgdir"
+
+  install -Dm755 "$srcdir/qmi-uim-primary" "$pkgdir/usr/lib/ModemManager/qmi-uim-primary"
+  install -Dm644 "$srcdir/10-qmi-uim-primary.conf" "$pkgdir/usr/lib/systemd/system/ModemManager.service.d/10-qmi-uim-primary.conf"
+  install -Dm644 "$srcdir/78-mm-qcom-sm8550.rules" "$pkgdir/usr/lib/udev/rules.d/78-mm-qcom-sm8550.rules"
+
+  install -Dm755 "$srcdir/qcom-ims-prepare" "$pkgdir/usr/lib/ModemManager/qcom-ims-prepare"
+  install -Dm644 "$srcdir/11-qcom-ims-prepare.conf" "$pkgdir/usr/lib/systemd/system/ModemManager.service.d/11-qcom-ims-prepare.conf"
+
+  cd "$pkgdir"
+  _pick libmm usr/include
+  _pick libmm usr/lib/girepository-1.0
+  _pick libmm usr/lib/libmm-glib.so*
+  _pick libmm usr/lib/pkgconfig
+  _pick libmm usr/share/gir-1.0
+  _pick libmm usr/share/vala
+  _pick docs usr/share/gtk-doc
+}
+
+package_libmm-glib() {
+  pkgdesc="ModemManager library"
+  license=(LGPL-2.1-or-later)
+  depends=(
+    glib2 libg{lib,object,io}-2.0.so
+    glibc
+    libgcc
+  )
+  provides=(libmm-glib.so)
+
+  mv libmm/* "$pkgdir"
+}
+
+package_modemmanager-docs() {
+  pkgdesc+=" (documentation)"
+  depends=()
+
+  mv docs/* "$pkgdir"
+}
+
+# vim:set sw=2 sts=-1 et:

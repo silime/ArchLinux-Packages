@@ -1,0 +1,150 @@
+diff --git a/src/mm-netlink.c b/src/mm-netlink.c
+index a71b699..5762832 100644
+--- a/src/mm-netlink.c
++++ b/src/mm-netlink.c
+@@ -228,9 +228,11 @@ transaction_complete (Transaction     *tr,
+                       gint             saved_errno)
+ {
+     GTask *task;
++    MsgFunc completion_fn;
+     guint32 sequence_id;
+
+     task = g_steal_pointer (&tr->completion_task);
++    completion_fn = tr->completion_fn;
+     sequence_id = tr->sequence_id;
+
+     g_hash_table_remove (tr->self->transactions,
+@@ -239,7 +241,7 @@ transaction_complete (Transaction     *tr,
+     if (!saved_errno) {
+         GError *error = NULL;
+
+-        if (!tr->completion_fn (task, hdr, &error))
++        if (!completion_fn (task, hdr, &error))
+             g_task_return_error (task, error);
+     } else {
+         g_task_return_new_error (task, G_IO_ERROR, g_io_error_from_errno (saved_errno),
+@@ -462,7 +464,7 @@ netlink_messages_cb (GSocket      *socket,
+ {
+     g_autoptr(GError)   error = NULL;
+     GInputVector        iv;
+-    GSocketAddress     *addr = NULL;
++    g_autoptr(GSocketAddress) addr = NULL;
+     struct sockaddr_nl  source_sockaddr;
+     gchar               buf[2048];
+     gssize              bytes_received;
+@@ -510,7 +512,7 @@ netlink_messages_cb (GSocket      *socket,
+
+     buffer_len = (guint) bytes_received;
+     for (hdr = (struct nlmsghdr *) buf; NLMSG_OK (hdr, buffer_len);
+-         NLMSG_NEXT (hdr, buffer_len)) {
++         hdr = NLMSG_NEXT (hdr, buffer_len)) {
+         Transaction     *tr;
+         struct nlmsgerr *err;
+         gint             nlerr = 0;
+@@ -522,8 +524,8 @@ netlink_messages_cb (GSocket      *socket,
+
+         switch (hdr->nlmsg_type) {
+         case NLMSG_ERROR:
+-            err = NLMSG_DATA (buf);
+-            nlerr = err->error;
++            err = NLMSG_DATA (hdr);
++            nlerr = -err->error;
+             break;
+         case RTM_NEWLINK:
+         case NLMSG_DONE:
+diff --git a/src/tests/meson.build b/src/tests/meson.build
+index 18ece91..30e6bcb 100644
+--- a/src/tests/meson.build
++++ b/src/tests/meson.build
+@@ -11,6 +11,7 @@ test_units = {
+   'error-helpers': libhelpers_dep,
+   'kernel-device-helpers': libkerneldevice_dep,
+   'modem-helpers': libhelpers_dep,
++  'netlink': libport_dep,
+   'port-scheduler': libport_dep,
+   'sms-part-3gpp': libhelpers_dep,
+   'sms-part-cdma': libhelpers_dep,
+diff --git a/src/tests/test-netlink.c b/src/tests/test-netlink.c
+new file mode 100644
+index 0000000..75b24d9
+--- /dev/null
++++ b/src/tests/test-netlink.c
+@@ -0,0 +1,78 @@
++/* SPDX-License-Identifier: GPL-2.0-or-later */
++
++#include <glib.h>
++#include <net/if.h>
++
++#include "mm-netlink.h"
++#include "mm-log-test.h"
++
++typedef struct {
++    GMainLoop  *loop;
++    GByteArray *address;
++    GError     *error;
++} TestContext;
++
++static void
++get_hwaddr_ready (MMNetlink    *netlink,
++                  GAsyncResult *result,
++                  TestContext  *ctx)
++{
++    ctx->address = mm_netlink_get_hwaddr_finish (netlink, result, &ctx->error);
++    g_main_loop_quit (ctx->loop);
++}
++
++static void
++test_get_hwaddr (void)
++{
++    MMNetlink  *netlink;
++    TestContext ctx = { 0 };
++    guint       ifindex;
++    guint       i;
++
++    ifindex = if_nametoindex ("lo");
++    g_assert_cmpuint (ifindex, >, 0);
++    netlink = g_object_new (MM_TYPE_NETLINK, NULL);
++    ctx.loop = g_main_loop_new (NULL, FALSE);
++
++    /* Repeat successful replies to exercise transaction destruction and reuse. */
++    for (i = 0; i < 32; i++) {
++        mm_netlink_get_hwaddr (netlink, ifindex, NULL,
++                               (GAsyncReadyCallback) get_hwaddr_ready, &ctx);
++        g_main_loop_run (ctx.loop);
++        g_assert_no_error (ctx.error);
++        g_assert_nonnull (ctx.address);
++        g_assert_cmpuint (ctx.address->len, ==, 6);
++        g_clear_pointer (&ctx.address, g_byte_array_unref);
++    }
++
++    g_main_loop_unref (ctx.loop);
++    g_object_unref (netlink);
++}
++
++static void
++test_get_hwaddr_invalid (void)
++{
++    MMNetlink  *netlink;
++    TestContext ctx = { 0 };
++
++    netlink = g_object_new (MM_TYPE_NETLINK, NULL);
++    ctx.loop = g_main_loop_new (NULL, FALSE);
++    mm_netlink_get_hwaddr (netlink, 0, NULL,
++                           (GAsyncReadyCallback) get_hwaddr_ready, &ctx);
++    g_main_loop_run (ctx.loop);
++    g_assert_null (ctx.address);
++    g_assert_error (ctx.error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT);
++    g_clear_error (&ctx.error);
++
++    g_main_loop_unref (ctx.loop);
++    g_object_unref (netlink);
++}
++
++int
++main (int argc, char **argv)
++{
++    g_test_init (&argc, &argv, NULL);
++    g_test_add_func ("/MM/netlink/get-hwaddr", test_get_hwaddr);
++    g_test_add_func ("/MM/netlink/get-hwaddr-invalid", test_get_hwaddr_invalid);
++    return g_test_run ();
++}
