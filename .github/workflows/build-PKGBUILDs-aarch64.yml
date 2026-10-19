@@ -27,6 +27,8 @@ jobs:
     - name: Select packages
       id: packages
       shell: bash
+      env:
+        BEFORE_SHA: ${{ github.event.before }}
       run: |
         mapfile -t all_packages < <(
           find . -type f -name PKGBUILD -printf '%h\n' | sed 's#^./##' | sort |
@@ -37,10 +39,26 @@ jobs:
             esac
           done
         )
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+        build_all=false
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" || -z "$BEFORE_SHA" || "$BEFORE_SHA" == "0000000000000000000000000000000000000000" ]]; then
+          build_all=true
+        elif ! git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null &&
+             ! git fetch --no-tags origin "$BEFORE_SHA"; then
+          echo "::warning::Previous push commit is unavailable; building all packages."
+          build_all=true
+        elif ! base=$(git merge-base "$BEFORE_SHA" "$GITHUB_SHA"); then
+          echo "::warning::Push histories have no common ancestor; building all packages."
+          build_all=true
+        fi
+
+        if [[ "$build_all" == true ]]; then
           printf '%s\n' "${all_packages[@]}" | jq -Rsc 'split("\n") | map(select(length > 0))' > packages.json
         else
-          mapfile -t changed_files < <(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}")
+          # Compare from the common ancestor so rewritten commits are included
+          # even when their package contents match the previous branch tip.
+          # Keep git diff outside process substitution so failures stop the job.
+          git diff --name-only "$base" "$GITHUB_SHA" > changed-files.txt
+          mapfile -t changed_files < changed-files.txt
           changed=()
           for package in "${all_packages[@]}"; do
             for file in "${changed_files[@]}"; do
