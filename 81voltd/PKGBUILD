@@ -1,0 +1,33 @@
+# Maintainer: Chalkin <chalkin@yeah.net>
+pkgname=81voltd
+pkgver=1.2.0
+pkgrel=1
+pkgdesc="IMS Data service for Qualcomm VoLTE over QMI/QRTR"
+arch=('aarch64')
+options=('strip' '!debug')
+url="https://gitlab.postmarketos.org/modem/81voltd"
+license=('GPL-2.0-or-later')
+depends=('glib2' 'glibc' 'libmm-glib' 'libqmi' 'qrtr' 'modemmanager' 'systemd-libs')
+makedepends=('git' 'meson' 'glib2-devel')
+_commit=a7794dd6c8ac216a97dc5a931edab2dfc46eca2a
+source=("git+https://gitlab.postmarketos.org/modem/81voltd.git#commit=${_commit}"
+        '81voltd-ims-retry.patch')
+sha256sums=('SKIP'
+            '6ae8da078c8f10b361181e291aa431541c4a62b679a18046ad1a861540f64e3c')
+
+prepare() {
+  cd "$pkgname"
+  patch -Np1 -i ../81voltd-ims-retry.patch
+}
+
+build() {
+  arch-meson "$pkgname" build
+  meson compile -C build
+}
+
+package() {
+  meson install -C build --destdir "$pkgdir"
+  # Arch uses systemd; do not ship the upstream OpenRC script.
+  rm -f "$pkgdir/etc/init.d/81voltd"
+  rmdir "$pkgdir/etc/init.d" "$pkgdir/etc" 2>/dev/null || true
+}

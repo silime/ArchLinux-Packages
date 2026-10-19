@@ -1,0 +1,25 @@
+pkgbase = 81voltd
+	pkgdesc = IMS Data service for Qualcomm VoLTE over QMI/QRTR
+	pkgver = 1.2.0
+	pkgrel = 1
+	url = https://gitlab.postmarketos.org/modem/81voltd
+	arch = aarch64
+	options = strip
+	options = !debug
+	license = GPL-2.0-or-later
+	makedepends = git
+	makedepends = meson
+	makedepends = glib2-devel
+	depends = glib2
+	depends = glibc
+	depends = libmm-glib
+	depends = libqmi
+	depends = qrtr
+	depends = modemmanager
+	depends = systemd-libs
+	source = git+https://gitlab.postmarketos.org/modem/81voltd.git#commit=a7794dd6c8ac216a97dc5a931edab2dfc46eca2a
+	source = 81voltd-ims-retry.patch
+	sha256sums = SKIP
+	sha256sums = 6ae8da078c8f10b361181e291aa431541c4a62b679a18046ad1a861540f64e3c
+
+pkgname = 81voltd

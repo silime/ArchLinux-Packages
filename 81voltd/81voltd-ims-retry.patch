@@ -1,0 +1,140 @@
+diff --git a/81voltd.service.in b/81voltd.service.in
+index 6084ae7..ab06b04 100644
+--- a/81voltd.service.in
++++ b/81voltd.service.in
+@@ -1,9 +1,13 @@
+ [Unit]
+ Description=IMS Data service on QMI/QRTR
+-After=ModemManager.target
++After=ModemManager.service
++Requires=ModemManager.service
++PartOf=ModemManager.service
+ 
+ [Service]
+ ExecStart=@bindir@/81voltd
++Restart=on-failure
++RestartSec=3
+ 
+ [Install]
+-WantedBy=multi-user.target
++WantedBy=multi-user.target ModemManager.service
+diff --git a/qvd-connection.c b/qvd-connection.c
+index 1147409..363d0b5 100644
+--- a/qvd-connection.c
++++ b/qvd-connection.c
+@@ -8,6 +8,9 @@
+ 
+ #include "qvd-connection.h"
+ 
++#define CONNECT_RETRY_INTERVAL_SECONDS 3
++#define CONNECT_RETRY_MAX_ATTEMPTS 10
++
+ enum {
+ 	ADDR_CHANGED,
+ 	CONNECT_ERR,
+@@ -22,6 +25,8 @@ struct _QVDConnection {
+ 	MMBearerIpFamily ip_type;
+ 	gchar *addr;
+ 	gboolean requested;
++	guint connect_attempts;
++	guint connect_retry_source;
+ 
+ 	guint32 sub_id, conn_id;
+ 	guint8 local_id;
+@@ -67,6 +72,11 @@ static void qvd_connection_dispose(GObject *obj)
+ {
+ 	QVDConnection *conn = QVD_CONNECTION(obj);
+ 
++	if (conn->connect_retry_source != 0) {
++		g_source_remove(conn->connect_retry_source);
++		conn->connect_retry_source = 0;
++	}
++
+ 	if (conn->addr != NULL)
+ 		g_free(g_steal_pointer(&conn->addr));
+ 
+@@ -140,6 +150,19 @@ void qvd_connection_set_handles(QVDConnection *conn,
+ 	conn->local_id = local_id;
+ }
+ 
++static void connect_bearer(QVDConnection *conn);
++
++static gboolean retry_connect(gpointer data)
++{
++	QVDConnection *conn = QVD_CONNECTION(data);
++
++	conn->connect_retry_source = 0;
++	if (conn->requested && conn->bearer != NULL)
++		connect_bearer(conn);
++
++	return G_SOURCE_REMOVE;
++}
++
+ static void on_connect(GObject *obj, GAsyncResult *res, gpointer data)
+ {
+ 	QVDConnection *conn = QVD_CONNECTION(data);
+@@ -148,21 +171,43 @@ static void on_connect(GObject *obj, GAsyncResult *res, gpointer data)
+ 	mm_bearer_connect_finish(MM_BEARER(obj), res, &err);
+ 	if (err != NULL) {
+ 		g_printerr("Failed to connect: %s\n", err->message);
+-		g_signal_emit(conn, conn_signals[CONNECT_ERR], 0, err);
++		if (conn->requested && conn->connect_attempts < CONNECT_RETRY_MAX_ATTEMPTS) {
++			g_warning("Retrying bearer connection in %u seconds (attempt %u/%u)",
++				  CONNECT_RETRY_INTERVAL_SECONDS,
++				  conn->connect_attempts + 1,
++				  CONNECT_RETRY_MAX_ATTEMPTS);
++			conn->connect_retry_source = g_timeout_add_seconds_full(
++				G_PRIORITY_DEFAULT,
++				CONNECT_RETRY_INTERVAL_SECONDS,
++				retry_connect,
++				g_object_ref(conn),
++				g_object_unref);
++		} else {
++			g_signal_emit(conn, conn_signals[CONNECT_ERR], 0, err);
++		}
+ 		g_clear_error(&err);
++	} else {
++		conn->connect_attempts = 0;
+ 	}
+ 
+ 	g_object_unref(conn);
+ }
+ 
++static void connect_bearer(QVDConnection *conn)
++{
++	conn->connect_attempts++;
++	mm_bearer_connect(conn->bearer, NULL, on_connect, g_object_ref(conn));
++}
++
+ void qvd_connection_connect(QVDConnection *conn)
+ {
+ 	g_assert(conn != NULL);
+ 
+ 	conn->requested = TRUE;
++	conn->connect_attempts = 0;
+ 
+ 	if (conn->bearer != NULL)
+-		mm_bearer_connect(conn->bearer, NULL, on_connect, g_object_ref(conn));
++		connect_bearer(conn);
+ }
+ 
+ static void on_disconnect(GObject *obj, GAsyncResult *res, gpointer data)
+@@ -186,6 +231,11 @@ void qvd_connection_disconnect(QVDConnection *conn)
+ 	g_assert(conn->bearer != NULL);
+ 
+ 	conn->requested = FALSE;
++	conn->connect_attempts = 0;
++	if (conn->connect_retry_source != 0) {
++		g_source_remove(conn->connect_retry_source);
++		conn->connect_retry_source = 0;
++	}
+ 
+ 	if (conn->bearer != NULL)
+ 		mm_bearer_disconnect(conn->bearer, NULL, on_disconnect, g_object_ref(conn));
+@@ -217,5 +267,5 @@ void qvd_connection_set_bearer(QVDConnection *conn, MMBearer *bearer)
+ 			 G_CALLBACK(on_bearer_properties_changed), conn);
+ 
+ 	if (conn->requested)
+-		mm_bearer_connect(conn->bearer, NULL, on_connect, conn);
++		connect_bearer(conn);
+ }
