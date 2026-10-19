@@ -1,0 +1,136 @@
+diff --git a/q6voiced.c b/q6voiced.c
+index 072dd7f..f66c571 100644
+--- a/q6voiced.c
++++ b/q6voiced.c
+@@ -8,10 +8,40 @@
+ struct q6voiced {
+ 	char card[64];
+ 	snd_pcm_t *tx, *rx;
++	bool requested;
++	unsigned int attempts;
+ };
+ 
++struct pcm_config {
++	unsigned int channels;
++	unsigned int rate;
++};
++
++static const struct pcm_config pcm_configs[] = {
++	/* Preserve the original q6voice format used by devices such as OnePlus 6. */
++	{ 1, 8000 },
++	/* AudioReach hostless voice on newer Qualcomm platforms. */
++	{ 2, 48000 },
++};
++
++static bool pcm_supports_config(snd_pcm_t *pcm, const struct pcm_config *config)
++{
++	snd_pcm_hw_params_t *params;
++
++	snd_pcm_hw_params_alloca(&params);
++	return snd_pcm_hw_params_any(pcm, params) == 0 &&
++	       snd_pcm_hw_params_test_access(pcm, params,
++					     SND_PCM_ACCESS_RW_INTERLEAVED) == 0 &&
++	       snd_pcm_hw_params_test_format(pcm, params, SND_PCM_FORMAT_S16_LE) == 0 &&
++	       snd_pcm_hw_params_test_channels(pcm, params, config->channels) == 0 &&
++	       snd_pcm_hw_params_test_rate(pcm, params, config->rate, 0) == 0;
++}
++
+ static void q6voiced_open(struct q6voiced *v)
+ {
++	const struct pcm_config *config = NULL;
++	size_t i;
++
+ 	if (v->tx)
+ 		return; /* Already active */
+ 
+@@ -19,20 +49,44 @@ static void q6voiced_open(struct q6voiced *v)
+ 	 * Opening the PCM devices starts the stream.
+ 	 * This should be replaced by a codec2codec link probably.
+ 	 */
+-	if (snd_pcm_open(&v->tx, v->card, SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK) < 0 ||
+-	    snd_pcm_set_params(v->tx, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 8000, 0, 500000) < 0 ||
+-	    snd_pcm_prepare(v->tx) < 0) {
++	if (snd_pcm_open(&v->tx, v->card, SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK) < 0) {
+ 		perror("Failed to open tx");
+ 		goto error;
+ 	}
+-	if (snd_pcm_open(&v->rx, v->card, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0 ||
+-	    snd_pcm_set_params(v->rx, SND_PCM_FORMAT_S16_LE, SND_PCM_ACCESS_RW_INTERLEAVED, 1, 8000, 0, 500000) < 0 ||
+-	    snd_pcm_prepare(v->rx) < 0) {
++	if (snd_pcm_open(&v->rx, v->card, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK) < 0) {
+ 		perror("Failed to open rx");
+ 		goto error;
+ 	}
+ 
+-	printf("PCM devices were opened.\n");
++	for (i = 0; i < sizeof(pcm_configs) / sizeof(pcm_configs[0]); i++) {
++		if (pcm_supports_config(v->tx, &pcm_configs[i]) &&
++		    pcm_supports_config(v->rx, &pcm_configs[i])) {
++			config = &pcm_configs[i];
++			break;
++		}
++	}
++	if (!config) {
++		fprintf(stderr, "No common supported q6voice PCM format\n");
++		goto error;
++	}
++
++	if (snd_pcm_set_params(v->tx, SND_PCM_FORMAT_S16_LE,
++			       SND_PCM_ACCESS_RW_INTERLEAVED,
++			       config->channels, config->rate, 0, 500000) < 0 ||
++	    snd_pcm_prepare(v->tx) < 0) {
++		perror("Failed to configure tx");
++		goto error;
++	}
++	if (snd_pcm_set_params(v->rx, SND_PCM_FORMAT_S16_LE,
++			       SND_PCM_ACCESS_RW_INTERLEAVED,
++			       config->channels, config->rate, 0, 500000) < 0 ||
++	    snd_pcm_prepare(v->rx) < 0) {
++		perror("Failed to configure rx");
++		goto error;
++	}
++
++	printf("PCM devices were opened (%u channels, %u Hz).\n",
++	       config->channels, config->rate);
+ 	return;
+ 
+ error:
+@@ -106,10 +160,14 @@ static void handle_signal(struct q6voiced *v, DBusMessage *msg, DBusError *err)
+ 		if (old_state == new_state)
+ 			return; /* No change */
+ 
+-		if (mm_state_is_active(new_state))
++		if (mm_state_is_active(new_state)) {
++			v->requested = true;
++			v->attempts = 0;
+ 			q6voiced_open(v);
+-		else if (mm_state_is_active(old_state) && !mm_state_is_active(new_state))
++		} else if (mm_state_is_active(old_state) && !mm_state_is_active(new_state)) {
++			v->requested = false;
+ 			q6voiced_close(v);
++		}
+ 	}
+ }
+ 
+@@ -152,7 +210,7 @@ int main(int argc, char **argv)
+ 	}
+ 
+ 	// Loop listening for signals being emmitted
+-	while (dbus_connection_read_write(conn, -1)) {
++	while (dbus_connection_read_write(conn, 100)) {
+ 		// We need to process all received messages
+ 		while (msg = dbus_connection_pop_message(conn)) {
+ 			handle_signal(&v, msg, &err);
+@@ -163,6 +221,12 @@ int main(int argc, char **argv)
+ 
+ 			dbus_message_unref(msg);
+ 		}
++
++		/* Profile switching releases the previous media graph asynchronously. */
++		if (v.requested && !v.tx && v.attempts < 30) {
++			v.attempts++;
++			q6voiced_open(&v);
++		}
+ 	}
+ 
+ 	return 0;
